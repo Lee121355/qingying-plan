@@ -1,0 +1,26 @@
+{
+  "name": "轻盈计划",
+  "short_name": "轻盈计划",
+  "description": "饮食、饮水与运动塑形管理",
+  "lang": "zh-CN",
+  "start_url": "./login.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6f8f5",
+  "theme_color": "#356c50",
+  "icons": [
+    {
+      "src": "app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

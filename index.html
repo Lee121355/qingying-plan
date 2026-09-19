@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#356c50"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="轻盈计划"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="app-icon-180.png">
+  <title>轻盈计划 · 今日概览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css"><script>if(localStorage.getItem('food.auth')!=='1')location.replace('login.html')</script>
+  <style>
+    .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(290px,.75fr); gap:18px; align-items:start; }
+    .chart-card { padding:19px 20px 16px; overflow:hidden; }
+    .chart-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+    .chart-head h2 { margin:0; font-size:15px; }
+    .chart-head p { margin:4px 0 0; color:var(--muted); font-size:10px; }
+    .chart-tools { display:flex; flex-direction:column; align-items:flex-end; gap:9px; }
+    .period-tabs { padding:3px; display:flex; gap:2px; border-radius:7px; background:#edf1ee; }
+    .period-tabs button { min-width:42px; height:29px; padding:0 10px; border:0; border-radius:5px; color:var(--muted); background:transparent; font-size:10px; font-weight:700; }
+    .period-tabs button.active { color:var(--green); background:#fff; box-shadow:0 2px 7px rgba(30,52,39,.09); }
+    .history-select { height:32px; min-width:126px; padding:0 29px 0 10px; border:1px solid var(--line); border-radius:6px; color:var(--ink); background:#fff; outline:none; font-size:9px; }
+    .chart-legend { display:flex; gap:13px; flex-wrap:wrap; color:var(--muted); font-size:9px; }
+    .chart-legend span { display:flex; align-items:center; gap:5px; }
+    .legend-bar, .legend-line { width:14px; height:6px; border-radius:3px; background:var(--green-2); }
+    .legend-line { height:2px; background:var(--orange); }
+    .chart-wrap { position:relative; height:260px; margin-top:14px; }
+    #nutritionChart { width:100%; height:100%; }
+    .chart-summary { padding:14px 0 0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; border-top:1px solid var(--line); }
+    .chart-summary span { color:var(--muted); font-size:9px; }
+    .chart-summary b { display:block; margin-top:3px; font-size:12px; }
+    .chart-summary small { color:var(--green); font-size:8px; }
+    .history-detail { max-height:0; overflow:hidden; opacity:0; border-top:0 solid var(--line); transition:max-height .35s ease,opacity .25s ease,padding .35s ease,border-width .35s ease; }
+    .history-detail.open { max-height:760px; padding-top:14px; border-top-width:1px; opacity:1; }
+    .history-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+    .history-head h3 { margin:0; font-size:11px; }
+    .history-head span { color:var(--muted); font-size:9px; }
+    .history-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
+    .history-item { width:100%; padding:9px 10px; border:0; border-radius:6px; color:inherit; background:#f4f7f4; text-align:left; transition:transform .2s ease,background .2s ease,box-shadow .2s ease; }
+    .history-item:not(:disabled) { cursor:pointer; }
+    .history-item:not(:disabled):hover { transform:translateY(-2px); background:#edf5ef; box-shadow:0 7px 16px rgba(35,65,48,.08); }
+    .history-item:disabled { opacity:.72; cursor:default; }
+    .history-item span { display:block; color:var(--muted); font-size:8px; }
+    .history-item b { display:block; margin-top:4px; font-size:10px; }
+    .history-item small { display:block; margin-top:2px; color:var(--green); font-size:8px; }
+    .hero { margin-top:16px; padding:21px 23px; background:var(--mint); display:flex; justify-content:space-between; gap:18px; align-items:center; border-radius:9px; }
+    .hero h2 { margin:3px 0 7px; font-size:19px; }
+    .hero p { margin:0; color:#587064; font-size:10px; }
+    .hero-score { width:82px; height:82px; flex:none; display:grid; place-items:center; border-radius:50%; background:conic-gradient(var(--green) 0 68%,rgba(255,255,255,.7) 68%); position:relative; }
+    .hero-score:after { content:""; position:absolute; inset:9px; border-radius:50%; background:var(--mint); }
+    .hero-score b { z-index:1; font-size:16px; color:var(--green); }
+    .quick-stats { margin-top:13px; display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+    .mini-stat { padding:15px; }
+    .mini-stat span { color:var(--muted); font-size:9px; }
+    .mini-stat b { display:block; margin-top:8px; font-size:19px; }
+    .mini-stat small { color:var(--muted); font-size:9px; }
+    .meal-list { overflow:hidden; }
+    .meal-row { padding:13px 15px; display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:11px; border-bottom:1px solid #edf1ee; }
+    .meal-row:last-child { border-bottom:0; }
+    .meal-thumb { width:50px; height:46px; border-radius:7px; object-fit:cover; }
+    .meal-row h3 { margin:0 0 3px; font-size:11px; }
+    .meal-row p { margin:0; color:var(--muted); font-size:9px; }
+    .meal-row b { font-size:11px; }
+    .water-card,.exercise-card { padding:17px; }
+    .card-title { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .card-title h2 { margin:0; font-size:13px; }
+    .water-value { margin:17px 0 10px; display:flex; align-items:baseline; gap:4px; }
+    .water-value b { font-size:29px; }
+    .water-value span { color:var(--muted); font-size:10px; }
+    .cups { margin:14px 0; display:grid; grid-template-columns:repeat(8,1fr); gap:5px; }
+    .cup { height:23px; border:1px solid #b8d9e4; border-radius:3px 3px 6px 6px; background:#f5fbfd; overflow:hidden; position:relative; }
+    .cup.full:after { content:""; position:absolute; inset:6px 0 0; background:#9dccdc; }
+    .exercise-card { margin-top:13px; }
+    .exercise-item { padding:11px 0; display:grid; grid-template-columns:31px 1fr 26px; gap:9px; align-items:center; border-bottom:1px solid #edf1ee; }
+    .exercise-item:last-of-type { border:0; }
+    .exercise-icon { width:31px;height:31px;display:grid;place-items:center;border-radius:7px;background:var(--orange-soft);color:var(--orange); }
+    .exercise-icon svg { width:15px; }
+    .exercise-item b { display:block;font-size:10px; }
+    .exercise-item span { display:block;color:var(--muted);font-size:8px;margin-top:2px; }
+    .check { width:22px;height:22px;border:1px solid var(--line);border-radius:50%;background:#fff;color:transparent;display:grid;place-items:center;padding:0; }
+    .check.done { color:#fff;border-color:var(--green);background:var(--green); }
+    .top-actions { display:flex; align-items:center; gap:10px; }
+    .checkin-btn.done { color:var(--green); border-color:#b8d2c0; background:#edf5ef; }
+    .checkin-celebration { text-align:center; padding:4px 0 12px; }
+    .checkin-mark { width:68px;height:68px;margin:0 auto 13px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--green);box-shadow:0 12px 28px rgba(53,108,80,.22); }
+    .checkin-mark svg { width:29px; }
+    .checkin-celebration h2 { margin:0;font-size:19px; }
+    .checkin-date { margin:6px 0 18px;color:var(--muted);font-size:10px; }
+    .quote-block { padding:17px;border-left:3px solid var(--green);border-radius:0 7px 7px 0;background:#f0f6f2;text-align:left; }
+    .quote-block p { margin:0;color:#315843;font-size:12px;line-height:1.8; }
+    .quote-block span { display:block;margin-top:8px;color:var(--muted);font-size:9px;text-align:right; }
+    .history-focus { padding:2px 0 7px; }
+    .history-focus-head { display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:17px; }
+    .history-focus-head span { color:var(--green);font-size:10px;font-weight:700; }
+    .history-focus-head b { display:block;margin-top:5px;font-size:21px; }
+    .history-rate { width:58px;height:58px;border-radius:50%;display:grid;place-items:center;color:var(--green);background:var(--mint);font-size:13px;font-weight:800; }
+    .history-focus-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+    .history-focus-grid div { padding:11px;border-radius:7px;background:#f4f7f4;text-align:center; }
+    .history-focus-grid span { display:block;color:var(--muted);font-size:8px; }
+    .history-focus-grid b { display:block;margin-top:5px;font-size:12px; }
+    @media(max-width:1050px){.dashboard-grid{grid-template-columns:1fr}.chart-wrap{height:235px}}
+    @media(max-width:720px){.chart-card{padding:15px 12px}.chart-head{flex-direction:column}.chart-tools{width:100%;align-items:stretch}.period-tabs{align-self:flex-end}.history-select{align-self:flex-end}.chart-wrap{height:220px}.chart-summary{grid-template-columns:repeat(2,1fr)}.history-grid{grid-template-columns:repeat(2,1fr)}.hero{padding:17px}.quick-stats{gap:7px}.mini-stat{padding:12px}.mini-stat b{font-size:16px}.top-actions{width:100%;justify-content:space-between}.profile-mini{margin-left:auto}.history-focus-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" data-shell></aside>
+  <main class="main">
+    <header class="topbar">
+      <div><p class="eyebrow">2026年9月18日 · 星期五</p><h1>早上好，<span data-user-name>林溪</span></h1><p>今天的营养摄入进度已经为你更新</p></div>
+      <div class="top-actions"><button class="btn btn-outline checkin-btn" id="checkinButton"><i data-lucide="calendar-check"></i><span>今日签到</span></button><a class="profile-mini" href="profile.html"><div><strong data-user-name>林溪</strong><span>编辑个人资料</span></div><div class="avatar" data-user-avatar>林</div></a></div>
+    </header>
+    <section class="card chart-card" aria-label="累计营养摄入动态图">
+      <div class="chart-head"><div><h2 id="chartTitle">本周累计营养摄入</h2><p id="chartSubtitle">按日累加摄入量，回顾本周营养达标情况</p><div class="chart-legend" style="margin-top:9px"><span><i class="legend-bar"></i>累计摄入</span><span><i class="legend-line"></i>累计目标</span></div></div><div class="chart-tools"><div class="period-tabs" aria-label="累计周期"><button class="active" data-period="week">周</button><button data-period="month">月</button><button data-period="year">年</button></div><select class="history-select" id="historySelect" aria-label="历史记录"></select></div></div>
+      <div class="chart-wrap"><canvas id="nutritionChart"></canvas></div>
+      <div class="chart-summary" id="chartSummary"></div>
+      <div class="history-detail" id="historyDetail"><div class="history-head"><h3 id="historyTitle">本周具体记录</h3><span>点击柱形也可查看对应节点</span></div><div class="history-grid" id="historyGrid"></div></div>
+    </section>
+    <div class="dashboard-grid">
+      <section>
+        <div class="hero"><div><p class="eyebrow">本周目标 · 稳步前进</p><h2>你的身体，正在回应你的认真。</h2><p>本周完成 5 次健康饮食记录，继续按照自己的节奏来吧。</p></div><div class="hero-score"><b>68%</b></div></div>
+        <div class="quick-stats"><div class="card mini-stat"><span>当前体重</span><b><i data-weight>62.5</i> <small>kg</small></b><small>目标 58 kg</small></div><div class="card mini-stat"><span>身体指数 BMI</span><b data-bmi>21.3</b><small>处于健康范围</small></div><div class="card mini-stat"><span>当前体脂率</span><b><i data-bodyfat>22.4</i> <small>%</small></b><small>最近一次设备数据</small></div></div>
+        <div class="section-head"><div><h2>今日饮食</h2><p>你的三餐计划与营养重点</p></div><a href="daily-plan.html">查看完整计划 →</a></div>
+        <div class="card meal-list" id="homeMeals"></div>
+        <div class="hero-banner" style="margin-top:14px;background:#2f5f47;color:#fff"><div><p class="eyebrow" style="color:#cce4d5">AI 营养助手</p><h2 style="margin-top:0">临时想换一餐？让 AI 帮你平衡。</h2><p style="color:#c7ded0">结合你的身体数据、今日摄入与口味生成搭配，可确认后导入计划。</p></div><button class="btn" style="background:#f1be78;color:#3d2b17" data-ai-open><i data-lucide="sparkles"></i>询问助手</button></div>
+      </section>
+      <aside>
+        <div class="section-head"><h2>饮水提醒</h2><button class="icon-btn" id="waterSettings" title="编辑饮水设置"><i data-lucide="settings-2"></i></button></div>
+        <div class="card water-card"><div class="card-title"><h2>今日饮水量</h2><span style="font-size:9px;color:var(--muted)">目标 <i data-water-target>2000</i> ml</span></div><div class="water-value"><b data-water-total>1260</b><span>ml</span></div><div class="progress"><span data-water-bar style="width:63%"></span></div><div class="cups" data-cups></div><button class="btn btn-secondary" id="addWater" style="width:100%"><i data-lucide="glass-water"></i><span>记录一杯水</span></button><p style="margin:9px 0 0;text-align:center;color:var(--muted);font-size:9px"><span data-cup-type>玻璃杯</span> · <span data-cup-size>200</span> ml / 次</p></div>
+        <div class="section-head"><h2>运动塑形</h2><a href="exercise.html">开始训练 →</a></div>
+        <div class="card exercise-card" id="homeExercises"></div>
+        <div class="notice" style="margin-top:13px"><strong>今日提醒</strong><br>午餐后的 10 分钟散步，有助于稳定餐后血糖，也让下午更有精神。</div>
+      </aside>
+    </div>
+  </main>
+</div>
+<div class="modal-backdrop" id="waterModal"><div class="modal"><div class="modal-head"><h2>饮水杯设置</h2><button class="icon-btn" data-close-modal title="关闭"><i data-lucide="x"></i></button></div><div class="form-grid"><div class="field"><label for="cupType">杯子类型</label><select id="cupType" class="select"><option>玻璃杯</option><option>保温杯</option><option>运动水壶</option><option>马克杯</option><option>瓶装水</option></select></div><div class="field"><label for="cupSize">每次容量（ml）</label><input id="cupSize" class="input" type="number" min="50" max="1000" step="50"></div><div class="field"><label for="waterTarget">每日目标（ml）</label><input id="waterTarget" class="input" type="number" min="500" max="5000" step="100"></div></div><div class="form-actions"><button class="btn btn-outline" data-close-modal>取消</button><button class="btn btn-primary" id="saveWater">保存设置</button></div></div></div>
+<div class="modal-backdrop" id="dailyReminder"><div class="modal"><div class="modal-head"><h2>今日健康提醒</h2><button class="icon-btn" data-close-modal title="关闭"><i data-lucide="x"></i></button></div><p data-reminder-text style="color:var(--muted);font-size:12px;line-height:1.8"></p><div class="notice green">提醒会在每次新登录会话时更新一次，不会在页面间重复打扰。</div><div class="form-actions"><a class="btn btn-secondary" href="daily-plan.html">查看完整计划</a><button class="btn btn-primary" data-close-modal>知道了</button></div></div></div>
+<div class="modal-backdrop" id="checkinModal"><div class="modal"><div class="modal-head"><h2>每日签到</h2><button class="icon-btn" data-close-modal title="关闭"><i data-lucide="x"></i></button></div><div class="checkin-celebration"><div class="checkin-mark"><i data-lucide="badge-check"></i></div><h2 id="checkinTitle">打卡成功</h2><p class="checkin-date" id="checkinDate"></p><div class="quote-block"><p id="checkinQuote"></p><span id="checkinAuthor"></span></div></div><div class="form-actions"><button class="btn btn-primary" data-close-modal>继续今天的计划</button></div></div></div>
+<div class="modal-backdrop" id="historyModal"><div class="modal"><div class="modal-head"><h2>摄入记录详情</h2><button class="icon-btn" data-close-modal title="关闭"><i data-lucide="x"></i></button></div><div class="history-focus"><div class="history-focus-head"><div><span id="historyModalLabel"></span><b id="historyModalCalories"></b></div><div class="history-rate" id="historyModalRate"></div></div><div class="history-focus-grid"><div><span>本段摄入</span><b id="historyModalSegment"></b></div><div><span>累计目标</span><b id="historyModalGoal"></b></div><div><span>营养建议</span><b id="historyModalTip"></b></div></div></div><div class="form-actions"><a class="btn btn-outline" href="daily-plan.html">查看饮食明细</a><button class="btn btn-primary" data-close-modal>知道了</button></div></div></div>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script><script src="app.js"></script>
+<script>
+  initCommon('home');
+  const profile = FOOD_APP.get('profile'); const targets = FOOD_APP.targets(profile);
+  document.querySelector('[data-weight]').textContent = profile.weight; document.querySelector('[data-bodyfat]').textContent = profile.bodyFat || '—'; document.querySelector('[data-bmi]').textContent = targets.bmi;
+  function renderMeals(){ document.getElementById('homeMeals').innerHTML = FOOD_APP.get('plan').slice(0,4).map(item => `<a class="meal-row" href="recipe-detail.html?id=${encodeURIComponent(item.id)}" style="text-decoration:none"><img class="meal-thumb" src="${item.image}" alt="${item.name}"><div><h3>${item.meal} · ${item.name}</h3><p>${item.grams} g · 蛋白质 ${item.protein || '--'} g · 碳水 ${item.carbs || '--'} g</p></div><b>${item.calories} kcal</b></a>`).join(''); }
+  function renderExercises(){ const ids=FOOD_APP.get('workoutPlan');document.getElementById('homeExercises').innerHTML = ids.slice(0,4).map(id=>FOOD_APP.workouts.find(x=>x.id===id)).filter(Boolean).map(item => `<div class="exercise-item"><div class="exercise-icon"><i data-lucide="${item.icon}"></i></div><div><b>${item.name}</b><span>${item.minutes} 分钟 · ${item.focus}</span></div><a class="icon-btn" href="exercise.html" title="开始 ${item.name}"><i data-lucide="play"></i></a></div>`).join('')||'<div class="empty">去运动塑形页面选择今日训练</div>'; if(window.lucide) lucide.createIcons(); }
+  function renderWater(){ const water=FOOD_APP.get('water'); document.querySelector('[data-water-total]').textContent=water.total; document.querySelector('[data-water-target]').textContent=water.target; document.querySelector('[data-water-bar]').style.width=`${Math.min(100,water.total/water.target*100)}%`; document.querySelector('[data-cup-type]').textContent=water.cupType; document.querySelector('[data-cup-size]').textContent=water.cupSize; const count=Math.max(1,Math.ceil(water.target/water.cupSize)); const filled=Math.round(water.total/water.cupSize); document.querySelector('[data-cups]').style.gridTemplateColumns=`repeat(${Math.min(count,10)},1fr)`; document.querySelector('[data-cups]').innerHTML=Array.from({length:Math.min(count,10)},(_,i)=>`<i class="cup ${i<filled?'full':''}"></i>`).join(''); }
+  renderMeals(); renderExercises(); renderWater();
+  document.getElementById('addWater').onclick=()=>{const w=FOOD_APP.get('water');w.total=Math.min(w.target,w.total+w.cupSize);FOOD_APP.set('water',w);renderWater();FOOD_APP.toast(`已记录 ${w.cupType} ${w.cupSize} ml`)};
+  document.getElementById('waterSettings').onclick=()=>{const w=FOOD_APP.get('water');cupType.value=w.cupType;cupSize.value=w.cupSize;waterTarget.value=w.target;waterModal.classList.add('open')};
+  document.getElementById('saveWater').onclick=()=>{const w=FOOD_APP.get('water');w.cupType=cupType.value;w.cupSize=Math.max(50,Number(cupSize.value));w.target=Math.max(500,Number(waterTarget.value));FOOD_APP.set('water',w);waterModal.classList.remove('open');renderWater();FOOD_APP.toast('饮水设置已更新')};
+  const intakeHistory = {
+    week: [
+      { name:'本周 · 9/14—9/20', labels:['周一','周二','周三','周四','周五','周六','周日'], values:[1680,3420,5140,6850,8240,null,null], goals:[targets.calories,targets.calories*2,targets.calories*3,targets.calories*4,targets.calories*5,null,null], nutrients:{calories:8240,protein:462,carbs:918,fiber:114}, days:5 },
+      { name:'上周 · 9/7—9/13', labels:['周一','周二','周三','周四','周五','周六','周日'], values:[1750,3510,5200,7010,8720,10460,12180], goals:Array.from({length:7},(_,i)=>targets.calories*(i+1)), nutrients:{calories:12180,protein:671,carbs:1375,fiber:161}, days:7 },
+      { name:'两周前 · 8/31—9/6', labels:['周一','周二','周三','周四','周五','周六','周日'], values:[1810,3590,5380,7100,8890,10730,12420], goals:Array.from({length:7},(_,i)=>targets.calories*(i+1)), nutrients:{calories:12420,protein:649,carbs:1430,fiber:154}, days:7 }
+    ],
+    month: [
+      { name:'2026年9月', labels:['第1周','第2周','第3周','第4周'], values:[12420,24600,32840,null], goals:[targets.calories*7,targets.calories*14,targets.calories*19,null], nutrients:{calories:32840,protein:1782,carbs:3723,fiber:429}, days:19 },
+      { name:'2026年8月', labels:['第1周','第2周','第3周','第4周','第5周'], values:[11980,24260,36540,48510,53680], goals:[7,14,21,28,31].map(d=>targets.calories*d), nutrients:{calories:53680,protein:2990,carbs:6025,fiber:706}, days:31 },
+      { name:'2026年7月', labels:['第1周','第2周','第3周','第4周','第5周'], values:[12260,24700,36840,49100,54420], goals:[7,14,21,28,31].map(d=>targets.calories*d), nutrients:{calories:54420,protein:3064,carbs:6140,fiber:720}, days:31 }
+    ],
+    year: [
+      { name:'2026年', labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月'], values:[53100,101400,155500,207800,262300,314900,369320,423000,455840], goals:[31,59,90,120,151,181,212,243,262].map(d=>targets.calories*d), nutrients:{calories:455840,protein:25380,carbs:51460,fiber:5990}, days:262 },
+      { name:'2025年', labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], values:[54200,103800,158600,211400,266200,318900,374300,429100,481800,536900,590400,645200], goals:[31,59,90,120,151,181,212,243,273,304,334,365].map(d=>targets.calories*d), nutrients:{calories:645200,protein:35140,carbs:72900,fiber:8210}, days:365 }
+    ]
+  };
+  const periodMeta={week:{title:'周累计营养摄入',subtitle:'按日累加摄入量，回顾每周营养达标情况',detail:'每周具体记录'},month:{title:'月累计营养摄入',subtitle:'按周累加摄入量，回顾每月营养变化',detail:'每月具体记录'},year:{title:'年累计营养摄入',subtitle:'按月累加摄入量，回顾年度饮食趋势',detail:'每年具体记录'}};
+  let activePeriod='week',activeRecord=0,chartGeometry=[];
+  const chartQuery=new URLSearchParams(location.search),requestedPeriod=chartQuery.get('period'),requestedRecord=Number(chartQuery.get('record'));if(periodMeta[requestedPeriod])activePeriod=requestedPeriod;if(Number.isInteger(requestedRecord)&&requestedRecord>=0)activeRecord=Math.min(requestedRecord,intakeHistory[activePeriod].length-1);document.querySelectorAll('[data-period]').forEach(button=>button.classList.toggle('active',button.dataset.period===activePeriod));
+  function formatChartValue(value){return value>=100000?`${(value/10000).toFixed(1)}万`:value>=1000?`${(value/1000).toFixed(value>=10000?0:1)}k`:String(Math.round(value))}
+  function selectedRecord(){return intakeHistory[activePeriod][activeRecord]}
+  function renderHistorySelect(){historySelect.innerHTML=intakeHistory[activePeriod].map((item,i)=>`<option value="${i}">${item.name}</option>`).join('');historySelect.value=activeRecord}
+  function renderChartContent(){
+    const record=selectedRecord(),meta=periodMeta[activePeriod],goalDays=record.days;chartTitle.textContent=meta.title;chartSubtitle.textContent=meta.subtitle;historyTitle.textContent=`${record.name} · ${meta.detail}`;
+    const summary=[['热量',record.nutrients.calories,targets.calories*goalDays,'kcal'],['蛋白质',record.nutrients.protein,targets.protein*goalDays,'g'],['碳水',record.nutrients.carbs,targets.carbs*goalDays,'g'],['膳食纤维',record.nutrients.fiber,25*goalDays,'g']];
+    chartSummary.innerHTML=summary.map(([label,value,goal,unit])=>{const rate=Math.round(value/goal*100);return `<div><span>${label}</span><b>${value.toLocaleString()} / ${goal.toLocaleString()} ${unit}</b><small>${rate}% · ${rate>=95&&rate<=105?'达标':rate<95?'仍可补充':'略高于目标'}</small></div>`}).join('');
+    historyGrid.innerHTML=record.labels.map((label,i)=>{if(record.values[i]==null)return `<button class="history-item" disabled><span>${label}</span><b>待记录</b><small>尚无摄入数据</small></button>`;const previous=i?record.values[i-1]||0:0,segment=record.values[i]-previous,rate=Math.round(record.values[i]/record.goals[i]*100);return `<button class="history-item" data-history-index="${i}"><span>${label}</span><b>+${segment.toLocaleString()} kcal</b><small>累计 ${record.values[i].toLocaleString()} · ${rate}%</small></button>`}).join('');
+    document.querySelectorAll('[data-history-index]').forEach(button=>button.onclick=()=>openHistoryRecord(Number(button.dataset.historyIndex)));
+    animateChart();
+  }
+  function animateChart(){
+    const record=selectedRecord(),canvas=document.getElementById('nutritionChart'),ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect();canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);const W=rect.width,H=rect.height,p={l:44,r:17,t:18,b:32};const raw=[...record.values.filter(v=>v!=null),...record.goals.filter(v=>v!=null)],max=Math.ceil(Math.max(...raw)*1.12/1000)*1000;let start;
+    function draw(ts){if(!start)start=ts;const progress=Math.min(1,(ts-start)/850),ease=1-Math.pow(1-progress,3);ctx.clearRect(0,0,W,H);ctx.font='9px Noto Sans SC';ctx.textAlign='right';ctx.fillStyle='#829088';for(let i=0;i<=4;i++){const y=p.t+(H-p.t-p.b)*i/4;ctx.strokeStyle='#e8eeea';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(W-p.r,y);ctx.stroke();ctx.fillText(formatChartValue(max-max*i/4),p.l-8,y+3)}const plotW=W-p.l-p.r,step=plotW/record.labels.length,barW=Math.min(38,step*.46);chartGeometry=[];record.labels.forEach((label,i)=>{const x=p.l+step*i+step/2,value=record.values[i];if(value!=null){const bh=(H-p.t-p.b)*value/max*ease;ctx.fillStyle='#629077';ctx.beginPath();ctx.roundRect(x-barW/2,H-p.b-bh,barW,bh,4);ctx.fill();chartGeometry.push({x:x-barW/2,y:H-p.b-bh,w:barW,h:bh,index:i})}ctx.fillStyle='#718077';ctx.textAlign='center';ctx.fillText(label,x,H-10)});ctx.strokeStyle='#c86f39';ctx.lineWidth=2;ctx.beginPath();let started=false;record.goals.forEach((v,i)=>{if(v==null)return;const x=p.l+step*i+step/2,y=H-p.b-(H-p.t-p.b)*v/max*ease;if(started)ctx.lineTo(x,y);else{ctx.moveTo(x,y);started=true}});ctx.stroke();record.goals.forEach((v,i)=>{if(v==null)return;const x=p.l+step*i+step/2,y=H-p.b-(H-p.t-p.b)*v/max*ease;ctx.fillStyle='#fff';ctx.strokeStyle='#c86f39';ctx.beginPath();ctx.arc(x,y,3.2,0,Math.PI*2);ctx.fill();ctx.stroke()});if(progress<1)requestAnimationFrame(draw)}requestAnimationFrame(draw)
+  }
+  function rememberChartView(){const url=new URL(location.href);url.searchParams.set('period',activePeriod);url.searchParams.set('record',activeRecord);history.replaceState(null,'',url)}
+  function openHistoryRecord(index){const record=selectedRecord(),previous=index?record.values[index-1]||0:0,segment=record.values[index]-previous,goal=record.goals[index],rate=Math.round(record.values[index]/goal*100);historyModalLabel.textContent=`${record.name} · ${record.labels[index]}`;historyModalCalories.textContent=`累计 ${record.values[index].toLocaleString()} kcal`;historyModalRate.textContent=`${rate}%`;historyModalSegment.textContent=`${segment.toLocaleString()} kcal`;historyModalGoal.textContent=`${goal.toLocaleString()} kcal`;historyModalTip.textContent=rate<90?'适当补充':rate>110?'注意控制':'摄入均衡';historyModal.classList.add('open')}
+  document.querySelectorAll('[data-period]').forEach(button=>button.onclick=()=>{activePeriod=button.dataset.period;activeRecord=0;document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===button));renderHistorySelect();renderChartContent();historyDetail.classList.add('open');rememberChartView()});
+  historySelect.onchange=()=>{activeRecord=Number(historySelect.value);renderChartContent();historyDetail.classList.add('open');rememberChartView()};
+  document.getElementById('nutritionChart').onclick=()=>historyDetail.classList.toggle('open');
+  const today=new Date(),dateText=new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(today),dateKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`,quotes=[
+    ['不积跬步，无以至千里；不积小流，无以成江海。','荀子'],
+    ['千里之行，始于足下。','《道德经》'],
+    ['天行健，君子以自强不息。','《周易》'],
+    ['锲而不舍，金石可镂。','荀子'],
+    ['知者不惑，仁者不忧，勇者不惧。','孔子'],
+    ['路虽远，行则将至；事虽难，做则必成。','每日寄语'],
+    ['认真完成今天的小事，就是在为明天积蓄力量。','每日寄语'],
+    ['身体会记住每一次认真吃饭、喝水和运动。','健康寄语'],
+    ['稳定地向前，比偶尔的全力以赴更可靠。','每日寄语'],
+    ['真正的改变，藏在那些看似普通的重复里。','每日寄语'],
+    ['今天照顾好自己，就是对未来最踏实的投资。','健康寄语'],
+    ['慢一点没有关系，只要你仍在向目标靠近。','每日寄语'],
+    ['把目标拆成今天能做到的一小步，然后完成它。','每日寄语'],
+    ['你不需要做到完美，只需要比昨天多坚持一点。','每日寄语'],
+    ['每一顿认真搭配的饭，都是身体收到的一份善意。','健康寄语'],
+    ['运动不是惩罚，而是一次和身体并肩前行。','健康寄语'],
+    ['规律作息、好好吃饭，也是很了不起的自律。','健康寄语'],
+    ['当你开始记录，改变就已经悄悄发生。','每日寄语'],
+    ['不必着急看见结果，先让好习惯成为日常。','每日寄语'],
+    ['今天流下的汗水，会变成明天更轻松的脚步。','运动寄语'],
+    ['选择适合自己的节奏，才能走得更稳、更远。','每日寄语'],
+    ['每一次克制有度，每一次补充得当，都在塑造更好的状态。','健康寄语'],
+    ['先完成，再完善；先行动，再等待动力。','每日寄语'],
+    ['所谓坚持，是普通的一天里依然愿意再做一点。','每日寄语'],
+    ['为自己准备一份健康餐，也是在认真拥抱生活。','健康寄语'],
+    ['休息不是停下进步，而是为下一次出发恢复力量。','健康寄语'],
+    ['把注意力放在可以改变的今天，答案会逐渐清晰。','每日寄语'],
+    ['没有白走的路，每一步都算数。','每日寄语'],
+    ['喝好每一杯水，吃好每一顿饭，过好每一个今天。','健康寄语'],
+    ['你正在养成的习惯，会成为未来从容生活的底气。','每日寄语']
+  ];
+  document.querySelector('.topbar .eyebrow').textContent=dateText.replace('星期',' · 星期');
+  function refreshCheckin(){const done=localStorage.getItem('food.checkin')===dateKey;checkinButton.classList.toggle('done',done);checkinButton.querySelector('span').textContent=done?'今日已签到':'今日签到'}
+  function randomQuote(){const saved=localStorage.getItem('food.checkinQuoteIndex'),last=Number(saved),hasLast=saved!==null&&Number.isInteger(last)&&last>=0&&last<quotes.length;let index=Math.floor(Math.random()*(quotes.length-(hasLast?1:0)));if(hasLast&&index>=last)index+=1;localStorage.setItem('food.checkinQuoteIndex',String(index));return quotes[index]}
+  checkinButton.onclick=()=>{const already=localStorage.getItem('food.checkin')===dateKey,quote=randomQuote();localStorage.setItem('food.checkin',dateKey);checkinTitle.textContent=already?'今日已签到':'打卡成功';checkinDate.textContent=dateText;checkinQuote.textContent=`“${quote[0]}”`;checkinAuthor.textContent=`—— ${quote[1]}`;checkinModal.classList.add('open');refreshCheckin()};
+  refreshCheckin();renderHistorySelect();renderChartContent();let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(animateChart,160)});showDailyReminder();
+</script>
+</body></html>
