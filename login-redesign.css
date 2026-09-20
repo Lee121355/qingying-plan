@@ -1,15 +1,15 @@
-:root { --green:#205f46; --green-deep:#164532; --line:#d5dfd8; --ink:#15221c; }
+:root { --green:#176044; --green-deep:#123c2e; --orange:#d56645; --line:#cfd7d2; --ink:#17201c; }
 * { letter-spacing: 0; }
-html, body { background: #12251b; font-family: "Segoe UI Variable Text", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+html, body { background: #10271e; font-family: "Segoe UI Variable Text", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
 button, input, a { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid rgba(49, 117, 84, .22); outline-offset: 2px; }
-.login-scene { min-height: 100dvh; background: #183026; }
-.scene-photo { inset: -2%; filter: saturate(.78) contrast(1.02); }
-.login-scene::before { background: rgba(8, 24, 16, .62); transition: background .7s ease; }
+.login-scene { min-height: 100dvh; background: var(--green-deep); }
+.scene-photo { inset: -2%; filter: saturate(.68) contrast(1.06); }
+.login-scene::before { background: rgba(7, 25, 17, .64); transition: background .7s ease; }
 .login-scene.open::before { background: rgba(8, 24, 16, .73); }
 .login-scene.open .scene-photo { transform: translateX(-5%) scale(1.06); filter: blur(2px) saturate(.68); }
 .login-brand { gap: 12px; transition: opacity .25s ease; }
-.brand-mark { width: 42px; height: 42px; border-radius: 8px 8px 8px 2px; box-shadow: 0 9px 28px rgba(0,0,0,.18); }
+.brand-mark { width: 42px; height: 42px; border-radius: 6px 6px 6px 1px; box-shadow: 0 9px 28px rgba(0,0,0,.18); }
 .login-brand strong { font-size: 17px; }
 .login-brand small { margin-top: 3px; font-size: 9px; letter-spacing: 0; }
 .welcome { top: 47%; width: min(610px, 78vw); }
@@ -19,11 +19,11 @@ button, input, a { -webkit-tap-highlight-color: transparent; }
 .login-scene.open .welcome { opacity: .22; transform: translate(-6%, -52%) scale(.98); }
 .swipe-wrap { width: min(400px, calc(100vw - 44px)); }
 .swipe-tip { margin-bottom: 11px; font-size: 10px; letter-spacing: 0; }
-.swipe-track { height: 60px; padding: 6px; border-radius: 30px; background: rgba(255,255,255,.12); }
-.swipe-progress { height: 46px; width: 46px; }
-.swipe-handle { width: 46px; height: 46px; }
+.swipe-track { height: 60px; padding: 6px; border-radius: 8px; background: rgba(255,255,255,.12); }
+.swipe-progress { height: 46px; width: 46px; border-radius: 5px; }
+.swipe-handle { width: 46px; height: 46px; border-radius: 5px; }
 .swipe-label { font-size: 11px; }
-.auth-sheet { width: min(470px, 100%); padding: clamp(78px, 12vh, 116px) clamp(30px, 4vw, 56px) 42px; justify-content: center; background: rgba(248, 250, 248, .98); box-shadow: -30px 0 90px rgba(3, 17, 9, .25); backdrop-filter: none; }
+.auth-sheet { width: min(470px, 100%); padding: clamp(78px, 12vh, 116px) clamp(30px, 4vw, 56px) 42px; justify-content: center; border-left: 3px solid var(--orange); background: rgba(248, 250, 248, .98); box-shadow: -30px 0 90px rgba(3, 17, 9, .25); backdrop-filter: none; }
 .back-button { width: 40px; height: 40px; border-radius: 6px; }
 .auth-sheet .eyebrow { margin-bottom: 8px; font-size: 11px; letter-spacing: 0; }
 .auth-sheet h2 { font-size: 30px; line-height: 1.2; }

@@ -229,6 +229,11 @@ function shell(active = 'home') {
 function initCommon(active = 'home') {
   document.body.dataset.page = active;
   shell(active);
+  document.addEventListener('error', event => {
+    if (!(event.target instanceof HTMLImageElement)) return;
+    event.target.classList.add('image-unavailable');
+    event.target.closest('.food-image, .recipe-hero')?.classList.add('image-fallback');
+  }, true);
   const profile = FOOD_APP.get('profile');
   document.querySelectorAll('[data-user-name]').forEach(el => el.textContent = profile.name);
   document.querySelectorAll('[data-user-avatar]').forEach(el => el.textContent = profile.name.slice(0, 1));
