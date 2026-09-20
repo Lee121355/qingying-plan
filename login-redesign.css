@@ -1,50 +1,50 @@
-:root { --green:#176044; --green-deep:#123c2e; --orange:#d56645; --line:#cfd7d2; --ink:#17201c; }
+:root { --green:#126247; --green-deep:#123c2e; --orange:#df6544; --line:#cad4ce; --ink:#16211c; }
 * { letter-spacing: 0; }
 html, body { background: #10271e; font-family: "Segoe UI Variable Text", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
 button, input, a { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid rgba(49, 117, 84, .22); outline-offset: 2px; }
 .login-scene { min-height: 100dvh; background: var(--green-deep); }
-.scene-photo { inset: -2%; filter: saturate(.68) contrast(1.06); }
-.login-scene::before { background: rgba(7, 25, 17, .64); transition: background .7s ease; }
+.scene-photo { inset: -2%; filter: saturate(.72) contrast(1.08); }
+.login-scene::before { background: linear-gradient(90deg,rgba(7,25,17,.72),rgba(7,25,17,.34) 58%,rgba(7,25,17,.56)); transition: background .7s ease; }
 .login-scene.open::before { background: rgba(8, 24, 16, .73); }
 .login-scene.open .scene-photo { transform: translateX(-5%) scale(1.06); filter: blur(2px) saturate(.68); }
 .login-brand { gap: 12px; transition: opacity .25s ease; }
 .brand-mark { width: 42px; height: 42px; border-radius: 6px 6px 6px 1px; box-shadow: 0 9px 28px rgba(0,0,0,.18); }
 .login-brand strong { font-size: 17px; }
 .login-brand small { margin-top: 3px; font-size: 9px; letter-spacing: 0; }
-.welcome { top: 47%; width: min(610px, 78vw); }
-.welcome p { margin-bottom: 13px; font-size: 12px; font-weight: 700; letter-spacing: 0; }
-.welcome h1 { max-width: 590px; font-size: clamp(46px, 5.2vw, 72px); line-height: 1.08; font-weight: 760; }
-.welcome span { max-width: 460px; margin-top: 20px; font-size: 14px; line-height: 1.8; }
+.welcome { top: 46%; width: min(640px, 78vw); }
+.welcome p { margin-bottom: 14px; font-size: 13px; font-weight: 700; letter-spacing: 0; }
+.welcome h1 { max-width: 620px; font-size: clamp(50px, 5.4vw, 76px); line-height: 1.08; font-weight: 760; }
+.welcome span { max-width: 480px; margin-top: 22px; font-size: 15px; line-height: 1.8; }
 .login-scene.open .welcome { opacity: .22; transform: translate(-6%, -52%) scale(.98); }
-.swipe-wrap { width: min(400px, calc(100vw - 44px)); }
-.swipe-tip { margin-bottom: 11px; font-size: 10px; letter-spacing: 0; }
-.swipe-track { height: 60px; padding: 6px; border-radius: 8px; background: rgba(255,255,255,.12); }
-.swipe-progress { height: 46px; width: 46px; border-radius: 5px; }
-.swipe-handle { width: 46px; height: 46px; border-radius: 5px; }
-.swipe-label { font-size: 11px; }
-.auth-sheet { width: min(470px, 100%); padding: clamp(78px, 12vh, 116px) clamp(30px, 4vw, 56px) 42px; justify-content: center; border-left: 3px solid var(--orange); background: rgba(248, 250, 248, .98); box-shadow: -30px 0 90px rgba(3, 17, 9, .25); backdrop-filter: none; }
+.swipe-wrap { width: min(420px, calc(100vw - 44px)); }
+.swipe-tip { margin-bottom: 12px; font-size: 11px; letter-spacing: 0; }
+.swipe-track { height: 62px; padding: 6px; border-radius: 8px; background: rgba(255,255,255,.14); }
+.swipe-progress { height: 48px; width: 48px; border-radius: 5px; }
+.swipe-handle { width: 48px; height: 48px; border-radius: 5px; }
+.swipe-label { font-size: 12px; }
+.auth-sheet { width: min(500px, 100%); padding: clamp(78px, 12vh, 116px) clamp(34px, 4vw, 60px) 44px; justify-content: center; border-left: 3px solid var(--orange); background: rgba(250,252,250,.985); box-shadow: -30px 0 90px rgba(3,17,9,.25); backdrop-filter: none; }
 .back-button { width: 40px; height: 40px; border-radius: 6px; }
-.auth-sheet .eyebrow { margin-bottom: 8px; font-size: 11px; letter-spacing: 0; }
-.auth-sheet h2 { font-size: 30px; line-height: 1.2; }
-.auth-sheet > p { margin: 9px 0 26px; font-size: 12px; }
+.auth-sheet .eyebrow { margin-bottom: 8px; font-size: 12px; letter-spacing: 0; }
+.auth-sheet h2 { font-size: 34px; line-height: 1.2; }
+.auth-sheet > p { margin: 10px 0 28px; font-size: 13px; }
 .auth-tabs { margin-bottom: 22px; border-radius: 6px; }
-.auth-tabs button { height: 38px; border-radius: 4px; font-size: 11px; }
+.auth-tabs button { height: 40px; border-radius: 4px; font-size: 12px; }
 .field { gap: 8px; margin-bottom: 15px; }
-.field label { font-size: 11px; }
-.field input { height: 46px; padding: 0 14px; border-color: var(--line); border-radius: 6px; font-size: 13px; }
+.field label { font-size: 12px; }
+.field input { height: 48px; padding: 0 14px; border-color: var(--line); border-radius: 6px; font-size: 14px; }
 .field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(32,95,70,.11); }
-.auth-row { margin: 5px 0 20px; font-size: 10px; }
-.submit { width: 100%; height: 44px; border-radius: 6px; font-size: 12px; }
-.auth-note, .message { font-size: 10px !important; }
-.skip { font-size: 10px; }
+.auth-row { margin: 6px 0 21px; font-size: 11px; }
+.submit { width: 100%; height: 46px; border-radius: 6px; font-size: 13px; }
+.auth-note, .message { font-size: 11px !important; }
+.skip { font-size: 11px; }
 @media(max-width:700px) {
   .login-scene.open .login-brand { opacity: 0; pointer-events: none; }
   .welcome { top: 43%; }
-  .welcome h1 { max-width: 330px; font-size: 42px; }
-  .welcome span { max-width: 320px; font-size: 12px; }
+  .welcome h1 { max-width: 340px; font-size: 44px; }
+  .welcome span { max-width: 330px; font-size: 13px; }
   .auth-sheet { padding: max(82px, calc(env(safe-area-inset-top) + 66px)) 24px max(34px, calc(env(safe-area-inset-bottom) + 22px)); }
-  .auth-sheet h2 { font-size: 27px; }
+  .auth-sheet h2 { font-size: 30px; }
   .field input { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
