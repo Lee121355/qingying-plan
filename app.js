@@ -1,27 +1,16 @@
 const FOOD_APP = {
   defaults: {
-    profile: { name: '林溪', gender: '女', age: 28, height: 171, weight: 62.5, bodyFat: 22.4, goal: '紧致塑形', activity: '中等活动' },
-    water: { total: 1260, target: 2000, cupSize: 200, cupType: '玻璃杯' },
-    plan: [
-      { id: 'oat', meal: '早餐', name: '燕麦酸奶莓果碗', calories: 420, grams: 320, protein: 24, carbs: 52, image: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=800&q=80' },
-      { id: 'chicken', meal: '午餐', name: '香煎鸡胸糙米碗', calories: 580, grams: 460, protein: 46, carbs: 67, image: 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80' },
-      { id: 'soup', meal: '晚餐', name: '虾仁菌菇暖汤', calories: 390, grams: 420, protein: 32, carbs: 29, image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80' }
-    ],
-    exercises: [
-      { id: 1, name: '晨间拉伸', duration: 10, place: '居家', done: true },
-      { id: 2, name: '轻松慢跑', duration: 30, place: '户外', done: false },
-      { id: 3, name: '睡前放松', duration: 8, place: '居家', done: false }
-    ],
-    workoutPlan: ['pilates-core', 'rope', 'stretch'],
-    workoutHistory: [
-      { id: 101, workoutId: 'pilates-core', name: '普拉提核心', seconds: 1320, calories: 81, date: new Date(Date.now() - 1 * 86400000).toISOString() },
-      { id: 102, workoutId: 'rope', name: '跳绳燃脂', seconds: 900, calories: 180, date: new Date(Date.now() - 3 * 86400000).toISOString() },
-      { id: 103, workoutId: 'stretch', name: '全身拉伸', seconds: 720, calories: 33, date: new Date(Date.now() - 5 * 86400000).toISOString() },
-      { id: 104, workoutId: 'dumbbell', name: '哑铃循环', seconds: 1200, calories: 138, date: new Date(Date.now() - 12 * 86400000).toISOString() },
-      { id: 105, workoutId: 'run', name: '户外慢跑', seconds: 1800, calories: 285, date: new Date(Date.now() - 28 * 86400000).toISOString() },
-      { id: 106, workoutId: 'glute', name: '臀腿塑形', seconds: 1440, calories: 145, date: new Date(Date.now() - 88 * 86400000).toISOString() }
-    ],
-    ingredientLogs: {}
+    profile: { name: '用户', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' },
+    water: { total: 0, target: 2000, cupSize: 200, cupType: '玻璃杯' },
+    plan: [],
+    exercises: [],
+    workoutPlan: [],
+    workoutHistory: [],
+    ingredientLogs: {},
+    ingredientLogDate: '',
+    nutritionHistory: [],
+    checkin: '',
+    checkinQuoteIndex: null
   },
   recipes: [
     { id:'oat', meal:'早餐', name:'燕麦酸奶莓果碗', calories:420, grams:320, protein:24, carbs:52, time:10, fit:'控糖、通勤早餐', tags:['高纤维','均衡碳水'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['燕麦 45 g','无糖酸奶 180 g','蓝莓 60 g','水煮蛋 1 个'], steps:['燕麦用热水浸泡 5 分钟。','加入无糖酸奶，铺上蓝莓。','搭配一枚水煮蛋，食用前拌匀。'] },
@@ -83,19 +72,128 @@ const FOOD_APP = {
     { id:'grapefruit-food', name:'西柚', group:'水果', icon:'circle', kcal:42, protein:.8, carbs:11, fat:.1, fiber:1.6 },
     { id:'walnut-food', name:'核桃', group:'坚果种子', icon:'circle-dot', kcal:654, protein:15, carbs:14, fat:65, fiber:6.7 }
   ],
+  dateKey(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  },
+  userId() {
+    let id = localStorage.getItem('food.currentUser');
+    if (id) return id;
+    try { id = JSON.parse(localStorage.getItem('food.account') || 'null')?.username; } catch {}
+    id = id || 'guest';
+    localStorage.setItem('food.currentUser', id);
+    return id;
+  },
+  userKey(key, id = this.userId()) { return `food.user.${encodeURIComponent(id)}.${key}`; },
+  ensureUser() {
+    const id = this.userId(), marker = this.userKey('initialized', id);
+    if (localStorage.getItem(marker) === '1') return;
+    let legacyAccount = null;
+    try { legacyAccount = JSON.parse(localStorage.getItem('food.account') || 'null'); } catch {}
+    const migrateLegacy = legacyAccount?.username === id || (id === 'guest' && !legacyAccount);
+    if (migrateLegacy) {
+      Object.keys(this.defaults).forEach(key => {
+        const legacy = localStorage.getItem(`food.${key}`);
+        if (legacy !== null) localStorage.setItem(this.userKey(key, id), legacy);
+      });
+      if (localStorage.getItem(this.userKey('ingredientLogs', id)) && !localStorage.getItem(this.userKey('ingredientLogDate', id))) {
+        localStorage.setItem(this.userKey('ingredientLogDate', id), JSON.stringify(this.dateKey()));
+      }
+    }
+    localStorage.setItem(marker, '1');
+  },
   get(key) {
-    const value = localStorage.getItem(`food.${key}`);
-    if (value) return JSON.parse(value);
-    if (key === 'workoutPlan') return this.get('profile').gender === '男' ? ['pullup', 'dumbbell', 'rope'] : ['pilates-core', 'glute', 'rope'];
+    this.ensureUser();
+    if (key === 'ingredientLogs') {
+      const savedDate = this.read('ingredientLogDate');
+      if (savedDate && savedDate !== this.dateKey()) return {};
+    }
+    const value = localStorage.getItem(this.userKey(key));
+    if (value !== null) {
+      try { return JSON.parse(value); } catch {}
+    }
     return structuredClone(this.defaults[key]);
   },
-  set(key, value) { localStorage.setItem(`food.${key}`, JSON.stringify(value)); },
+  read(key) {
+    const value = localStorage.getItem(this.userKey(key));
+    if (value === null) return structuredClone(this.defaults[key]);
+    try { return JSON.parse(value); } catch { return structuredClone(this.defaults[key]); }
+  },
+  set(key, value) {
+    this.ensureUser();
+    localStorage.setItem(this.userKey(key), JSON.stringify(value));
+    if (key === 'ingredientLogs') {
+      localStorage.setItem(this.userKey('ingredientLogDate'), JSON.stringify(this.dateKey()));
+      this.syncNutritionHistory(value);
+    }
+  },
+  syncNutritionHistory(logs) {
+    const totals = Object.entries(logs || {}).reduce((sum, [id, grams]) => {
+      const food = this.ingredients.find(item => item.id === id), ratio = Number(grams) / 100;
+      if (!food || !Number.isFinite(ratio)) return sum;
+      sum.calories += food.kcal * ratio; sum.protein += food.protein * ratio; sum.carbs += food.carbs * ratio; sum.fat += food.fat * ratio; sum.fiber += food.fiber * ratio;
+      return sum;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+    const date = this.dateKey(), history = this.read('nutritionHistory').filter(item => item.date !== date);
+    if (Object.values(totals).some(value => value > 0)) history.push({ date, ...Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, Math.round(value * 10) / 10])) });
+    history.sort((a, b) => a.date.localeCompare(b.date));
+    localStorage.setItem(this.userKey('nutritionHistory'), JSON.stringify(history));
+  },
+  nutritionPeriods(targets = this.targets()) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const entries = this.get('nutritionHistory').map(item => ({ ...item, day: new Date(`${item.date}T00:00:00`) })).filter(item => !Number.isNaN(item.day.getTime()) && item.day <= today);
+    const addDays = (date, days) => { const next = new Date(date); next.setDate(next.getDate() + days); return next; };
+    const monday = date => { const start = new Date(date), day = (start.getDay() + 6) % 7; start.setDate(start.getDate() - day); start.setHours(0, 0, 0, 0); return start; };
+    const monthStart = date => new Date(date.getFullYear(), date.getMonth(), 1);
+    const yearStart = date => new Date(date.getFullYear(), 0, 1);
+    const sameDay = (a, b) => a.getTime() === b.getTime();
+    const sum = list => list.reduce((total, item) => {
+      ['calories', 'protein', 'carbs', 'fat', 'fiber'].forEach(key => { total[key] += Number(item[key]) || 0; });
+      return total;
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+    const roundNutrients = nutrients => Object.fromEntries(Object.entries(nutrients).map(([key, value]) => [key, Math.round(value * 10) / 10]));
+    const formatRange = (start, end) => `${start.getMonth() + 1}/${start.getDate()} 至 ${end.getMonth() + 1}/${end.getDate()}`;
+    const uniqueStarts = (current, selector) => {
+      const starts = [current, ...entries.map(item => selector(item.day))];
+      return [...new Map(starts.map(date => [this.dateKey(date), date])).values()].sort((a, b) => b - a).slice(0, 12);
+    };
+    const createRecord = (name, labels, bins, periodStart, periodEnd) => {
+      const limit = periodEnd > today ? today : periodEnd;
+      const periodEntries = entries.filter(item => item.day >= periodStart && item.day <= limit);
+      let cumulative = 0;
+      const values = [], goals = [], segments = [], recorded = [];
+      bins.forEach(bin => {
+        if (bin.start > limit) { values.push(null); goals.push(null); segments.push(0); recorded.push(false); return; }
+        const binEnd = bin.end > limit ? limit : bin.end, list = periodEntries.filter(item => item.day >= bin.start && item.day <= binEnd), segment = sum(list).calories;
+        cumulative += segment; values.push(Math.round(cumulative)); segments.push(Math.round(segment)); recorded.push(list.length > 0);
+        goals.push(targets.ready ? Math.round(targets.calories * ((binEnd - periodStart) / 86400000 + 1)) : null);
+      });
+      return { name, labels, values, goals, segments, recorded, nutrients: roundNutrients(sum(periodEntries)), days: Math.max(1, Math.floor((limit - periodStart) / 86400000) + 1) };
+    };
+    const currentWeek = monday(today), currentMonth = monthStart(today), currentYear = yearStart(today);
+    const week = uniqueStarts(currentWeek, monday).map(start => {
+      const end = addDays(start, 6), bins = Array.from({ length: 7 }, (_, index) => { const day = addDays(start, index); return { start: day, end: day }; });
+      return createRecord(`${sameDay(start, currentWeek) ? '本周' : '周记录'} · ${formatRange(start, end)}`, ['周一', '周二', '周三', '周四', '周五', '周六', '周日'], bins, start, end);
+    });
+    const month = uniqueStarts(currentMonth, monthStart).map(start => {
+      const end = new Date(start.getFullYear(), start.getMonth() + 1, 0), count = Math.ceil(end.getDate() / 7);
+      const bins = Array.from({ length: count }, (_, index) => ({ start: addDays(start, index * 7), end: addDays(start, Math.min(end.getDate() - 1, index * 7 + 6)) }));
+      return createRecord(`${start.getFullYear()}年${start.getMonth() + 1}月`, bins.map((_, index) => `第${index + 1}周`), bins, start, end);
+    });
+    const year = uniqueStarts(currentYear, yearStart).map(start => {
+      const end = new Date(start.getFullYear(), 11, 31), bins = Array.from({ length: 12 }, (_, index) => ({ start: new Date(start.getFullYear(), index, 1), end: new Date(start.getFullYear(), index + 1, 0) }));
+      return createRecord(`${start.getFullYear()}年`, bins.map((_, index) => `${index + 1}月`), bins, start, end);
+    });
+    return { week, month, year };
+  },
   targets(profile = this.get('profile')) {
+    const weight = Number(profile.weight), height = Number(profile.height), age = Number(profile.age);
+    const profileReady = ['男', '女'].includes(profile.gender) && ['减脂', '紧致塑形', '增肌', '维持健康'].includes(profile.goal) && ['低活动', '中等活动', '高强度活动'].includes(profile.activity);
+    if (!(weight > 0 && height > 0 && age > 0 && profileReady)) return { calories: 0, protein: 0, carbs: 0, fat: 0, bmi: weight > 0 && height > 0 ? (weight / ((height / 100) ** 2)).toFixed(1) : '待完善', ready: false };
     const sexOffset = profile.gender === '男' ? 5 : -161;
-    const bmr = Math.round(10 * profile.weight + 6.25 * profile.height - 5 * profile.age + sexOffset);
+    const bmr = Math.round(10 * weight + 6.25 * height - 5 * age + sexOffset);
     const factor = profile.activity === '高强度活动' ? 1.7 : profile.activity === '中等活动' ? 1.5 : 1.3;
     const calories = Math.round(bmr * factor - (profile.goal === '增肌' ? -180 : profile.goal === '减脂' ? 280 : 100));
-    return { calories, protein: Math.round(profile.weight * (profile.goal === '增肌' ? 1.8 : 1.55)), carbs: Math.round(calories * .46 / 4), fat: Math.round(calories * .27 / 9), bmi: (profile.weight / ((profile.height / 100) ** 2)).toFixed(1) };
+    return { calories, protein: Math.round(weight * (profile.goal === '增肌' ? 1.8 : 1.55)), carbs: Math.round(calories * .46 / 4), fat: Math.round(calories * .27 / 9), bmi: (weight / ((height / 100) ** 2)).toFixed(1), ready: true };
   },
   toast(message) {
     let node = document.querySelector('.toast');
@@ -153,14 +251,15 @@ function initAssistant() {
   const open=()=>{panel.classList.add('open');input.focus()};
   fab.onclick=()=>{if(fab.dataset.justDragged)return;if(panel.classList.contains('open'))panel.classList.remove('open');else{panel.classList.add('open');restorePosition(panel,'food.aiPanelPosition');input.focus()}};panel.querySelector('[data-ai-close]').onclick=()=>panel.classList.remove('open');
   document.querySelectorAll('[data-ai-open]').forEach(button=>button.addEventListener('click',open));
-  panel.querySelector('form').onsubmit=e=>{e.preventDefault();const question=input.value.trim();if(!question)return;messages.insertAdjacentHTML('beforeend',`<div class="ai-message user"></div>`);messages.lastElementChild.textContent=question;input.value='';const reply=document.createElement('div');reply.className='ai-message assistant';reply.textContent='正在结合你的身体数据和今日记录分析…';messages.appendChild(reply);messages.scrollTop=messages.scrollHeight;setTimeout(()=>{const target=FOOD_APP.targets(),plan=FOOD_APP.get('plan'),cal=plan.reduce((sum,item)=>sum+Number(item.calories||0),0);reply.textContent=`你今日计划约 ${cal} kcal，目标约 ${target.calories} kcal。建议优先补足优质蛋白和蔬菜，并根据饥饿程度调整主食份量。`;messages.scrollTop=messages.scrollHeight},650)};
+  panel.querySelector('form').onsubmit=e=>{e.preventDefault();const question=input.value.trim();if(!question)return;messages.insertAdjacentHTML('beforeend',`<div class="ai-message user"></div>`);messages.lastElementChild.textContent=question;input.value='';const reply=document.createElement('div');reply.className='ai-message assistant';reply.textContent='正在结合你的身体数据和今日记录分析…';messages.appendChild(reply);messages.scrollTop=messages.scrollHeight;setTimeout(()=>{const target=FOOD_APP.targets(),plan=FOOD_APP.get('plan'),cal=plan.reduce((sum,item)=>sum+Number(item.calories||0),0);reply.textContent=target.ready?`你今日计划约 ${cal} kcal，目标约 ${target.calories} kcal。建议优先补足优质蛋白和蔬菜，并根据饥饿程度调整主食份量。`:`你目前还没有完整的年龄、身高和体重数据。可以先完善个人资料，再获得更准确的热量与营养建议。`;messages.scrollTop=messages.scrollHeight},650)};
   if(window.lucide)window.lucide.createIcons();
   window.addEventListener('resize',()=>{[fab,panel].forEach(el=>{const rect=el.getBoundingClientRect(),bounds=positionBounds(el);if(rect.right>innerWidth||rect.bottom>innerHeight-(innerWidth<=720?80:0)){el.style.left=`${Math.max(8,Math.min(rect.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(rect.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}})});
 }
 
 function showDailyReminder() {
-  if (sessionStorage.getItem('food.reminderShown')) return;
-  sessionStorage.setItem('food.reminderShown', '1');
+  const reminderKey = `food.reminderShown.${encodeURIComponent(FOOD_APP.userId())}`;
+  if (sessionStorage.getItem(reminderKey)) return;
+  sessionStorage.setItem(reminderKey, '1');
   const plan = FOOD_APP.get('plan');
   const total = plan.reduce((sum, item) => sum + Number(item.calories || 0), 0);
   setTimeout(() => {

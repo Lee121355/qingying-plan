@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qingying-plan-v3';
+const CACHE_NAME = 'qingying-plan-v5';
 const APP_SHELL = [
   './login.html',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './redesign.css',
   './login-redesign.css',
   './app.js',
+  './auth.js',
   './manifest.webmanifest',
   './app-icon-180.png',
   './app-icon-192.png',

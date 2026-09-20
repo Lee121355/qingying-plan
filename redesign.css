@@ -126,7 +126,7 @@ button:active, .btn:active, .icon-btn:active { transform: translateY(1px); }
 .hero { margin-top: 0 !important; padding: 22px 24px !important; border: 1px solid #cfe0d5; border-left: 4px solid var(--green); border-radius: 8px !important; background: #e5f0e8 !important; }
 .hero h2 { margin: 4px 0 7px !important; font-size: 21px !important; }
 .hero p:not(.eyebrow) { font-size: 11px !important; line-height: 1.65; }
-.hero-score { width: 78px !important; height: 78px !important; background: conic-gradient(var(--green) 0 68%, rgba(255,255,255,.78) 68%) !important; }
+.hero-score { width: 78px !important; height: 78px !important; background: conic-gradient(var(--green) 0 var(--score, 0%), rgba(255,255,255,.78) var(--score, 0%)) !important; }
 .hero-score:after { background: #e5f0e8 !important; }
 .quick-stats { margin-top: 12px !important; gap: 10px !important; }
 .mini-stat { padding: 15px 16px !important; background: #fff; }
