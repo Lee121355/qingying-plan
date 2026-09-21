@@ -22,6 +22,24 @@ const FOOD_AUTH = {
     localStorage.setItem(this.scopedKey(username, 'profile'), JSON.stringify(profile));
     localStorage.setItem(marker, '1');
   },
+  profileComplete(username) {
+    let profile = null;
+    try { profile = JSON.parse(localStorage.getItem(this.scopedKey(username, 'profile')) || 'null'); } catch {}
+    return Boolean(profile && profile.name && ['男', '女'].includes(profile.gender) && Number(profile.age) > 0 && Number(profile.height) > 0 && Number(profile.weight) > 0 && profile.goal && profile.activity);
+  },
+  onboardingState(username) {
+    const key = this.scopedKey(username, 'onboardingComplete');
+    let state = localStorage.getItem(key);
+    if (state === null) {
+      state = this.profileComplete(username) ? '2' : '0';
+      localStorage.setItem(key, state);
+    } else if (state === '1' && this.profileComplete(username)) {
+      // In older versions, "1" meant the entire onboarding flow was complete.
+      state = '2';
+      localStorage.setItem(key, state);
+    }
+    return state;
+  },
   activate(account) {
     localStorage.setItem('food.currentUser', account.username);
     localStorage.setItem('food.account', JSON.stringify({ username: account.username, password: account.password }));
@@ -37,7 +55,7 @@ const FOOD_AUTH = {
     this.initializeBlank(username);
     localStorage.setItem(this.scopedKey(username, 'onboardingComplete'), '0');
     this.activate(account);
-    return { ok: true, needsOnboarding: true };
+    return { ok: true, next: 'onboarding.html' };
   },
   login(username, password) {
     const accounts = this.accounts();
@@ -47,15 +65,18 @@ const FOOD_AUTH = {
       account = { username, password, name: username };
       accounts[username] = account;
       this.save(accounts);
-      this.initializeBlank(username);
-      localStorage.setItem(this.scopedKey(username, 'onboardingComplete'), '0');
     }
+    this.initializeBlank(username);
+    const state = this.onboardingState(username);
     this.activate(account);
-    return { ok: true, needsOnboarding: localStorage.getItem(this.scopedKey(username, 'onboardingComplete')) === '0' };
+    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'index.html' };
   },
   guest() {
+    this.initializeBlank('guest');
+    const state = this.onboardingState('guest');
     localStorage.setItem('food.currentUser', 'guest');
     localStorage.setItem('food.auth', '1');
     sessionStorage.removeItem('food.reminderShown.guest');
+    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'index.html' };
   }
 };

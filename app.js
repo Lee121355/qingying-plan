@@ -1,7 +1,23 @@
 if (localStorage.getItem('food.auth') === '1' && !location.pathname.endsWith('/onboarding.html')) {
   const onboardingUser = localStorage.getItem('food.currentUser');
   const onboardingKey = onboardingUser ? 'food.user.' + encodeURIComponent(onboardingUser) + '.onboardingComplete' : '';
-  if (onboardingKey && localStorage.getItem(onboardingKey) === '0') location.replace('onboarding.html');
+  let onboardingState = onboardingKey ? localStorage.getItem(onboardingKey) : '';
+  let onboardingProfile = null;
+  try { onboardingProfile = onboardingUser ? JSON.parse(localStorage.getItem('food.user.' + encodeURIComponent(onboardingUser) + '.profile') || 'null') : null; } catch {}
+  const hasCompletedProfile = Boolean(onboardingProfile && onboardingProfile.name && ['男', '女'].includes(onboardingProfile.gender) && Number(onboardingProfile.age) > 0 && Number(onboardingProfile.height) > 0 && Number(onboardingProfile.weight) > 0 && onboardingProfile.goal && onboardingProfile.activity);
+  if (onboardingKey && onboardingState === null) {
+    onboardingState = hasCompletedProfile ? '2' : '0';
+    localStorage.setItem(onboardingKey, onboardingState);
+  }
+  if (onboardingState === '1') {
+    if (hasCompletedProfile) {
+      onboardingState = '2';
+      localStorage.setItem(onboardingKey, onboardingState);
+    }
+  }
+  const onProfilePage = location.pathname.endsWith('/profile.html');
+  if (onboardingState === '0') location.replace('onboarding.html');
+  if (onboardingState === '1' && !onProfilePage) location.replace('profile.html?setup=1');
 }
 
 const FOOD_APP = {
