@@ -1,6 +1,12 @@
+if (localStorage.getItem('food.auth') === '1' && !location.pathname.endsWith('/onboarding.html')) {
+  const onboardingUser = localStorage.getItem('food.currentUser');
+  const onboardingKey = onboardingUser ? 'food.user.' + encodeURIComponent(onboardingUser) + '.onboardingComplete' : '';
+  if (onboardingKey && localStorage.getItem(onboardingKey) === '0') location.replace('onboarding.html');
+}
+
 const FOOD_APP = {
   defaults: {
-    profile: { name: '用户', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' },
+    profile: { name: '', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' },
     water: { total: 0, target: 2000, cupSize: 200, cupType: '玻璃杯', date: '' },
     plan: [],
     exercises: [],
@@ -374,9 +380,9 @@ function initCommon(active = 'home') {
     event.target.classList.add('image-unavailable');
     event.target.closest('.food-image, .recipe-hero')?.classList.add('image-fallback');
   }, true);
-  const profile = FOOD_APP.get('profile');
-  document.querySelectorAll('[data-user-name]').forEach(el => el.textContent = profile.name);
-  document.querySelectorAll('[data-user-avatar]').forEach(el => el.textContent = profile.name.slice(0, 1));
+  const profile = FOOD_APP.get('profile'), displayName = profile.name || '用户';
+  document.querySelectorAll('[data-user-name]').forEach(el => el.textContent = displayName);
+  document.querySelectorAll('[data-user-avatar]').forEach(el => el.textContent = displayName.slice(0, 1));
   if (window.lucide) window.lucide.createIcons();
   document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => btn.closest('.modal-backdrop').classList.remove('open')));
   document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('open'); }));

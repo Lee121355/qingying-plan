@@ -15,10 +15,10 @@ const FOOD_AUTH = {
     return accounts;
   },
   save(accounts) { localStorage.setItem('food.accounts', JSON.stringify(accounts)); },
-  initializeBlank(username, name) {
+  initializeBlank(username) {
     const marker = this.scopedKey(username, 'initialized');
     if (localStorage.getItem(marker) === '1') return;
-    const profile = { name: name || username, gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' };
+    const profile = { name: '', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' };
     localStorage.setItem(this.scopedKey(username, 'profile'), JSON.stringify(profile));
     localStorage.setItem(marker, '1');
   },
@@ -34,9 +34,10 @@ const FOOD_AUTH = {
     const account = { username, password, name: name || username };
     accounts[username] = account;
     this.save(accounts);
-    this.initializeBlank(username, account.name);
+    this.initializeBlank(username);
+    localStorage.setItem(this.scopedKey(username, 'onboardingComplete'), '0');
     this.activate(account);
-    return { ok: true };
+    return { ok: true, needsOnboarding: true };
   },
   login(username, password) {
     const accounts = this.accounts();
@@ -46,10 +47,11 @@ const FOOD_AUTH = {
       account = { username, password, name: username };
       accounts[username] = account;
       this.save(accounts);
-      this.initializeBlank(username, username);
+      this.initializeBlank(username);
+      localStorage.setItem(this.scopedKey(username, 'onboardingComplete'), '0');
     }
     this.activate(account);
-    return { ok: true };
+    return { ok: true, needsOnboarding: localStorage.getItem(this.scopedKey(username, 'onboardingComplete')) === '0' };
   },
   guest() {
     localStorage.setItem('food.currentUser', 'guest');
