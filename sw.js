@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qingying-plan-v9';
+const CACHE_NAME = 'qingying-plan-v10';
 const APP_SHELL = [
   './login.html',
   './onboarding.html',

@@ -103,7 +103,7 @@
   <aside class="sidebar" data-shell></aside>
   <main class="main">
     <header class="topbar">
-      <div><p class="eyebrow">今天</p><h1>早上好，<span data-user-name>用户</span></h1><p>从今天的第一条健康记录开始</p></div>
+      <div><p class="eyebrow">今天</p><h1><span id="timeGreeting">早上好</span>，<span data-user-name>用户</span></h1><p>从今天的第一条健康记录开始</p></div>
       <div class="top-actions"><button class="btn btn-outline checkin-btn" id="checkinButton"><i data-lucide="calendar-check"></i><span>今日签到</span></button><a class="profile-mini" href="profile.html"><div><strong data-user-name>用户</strong><span>编辑个人资料</span></div><div class="avatar" data-user-avatar>用</div></a></div>
     </header>
     <section class="card chart-card" aria-label="累计营养摄入动态图">
@@ -138,6 +138,17 @@
 <script>
   initCommon('home');
   const profile = FOOD_APP.get('profile'); const targets = FOOD_APP.targets(profile);
+  function getBeijingGreeting(date=new Date()){
+    const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Shanghai',hour:'2-digit',hourCycle:'h23'}).format(date));
+    if(hour>=5&&hour<9)return '早上好';
+    if(hour>=9&&hour<11)return '上午好';
+    if(hour>=11&&hour<14)return '中午好';
+    if(hour>=14&&hour<18)return '下午好';
+    return '晚上好';
+  }
+  function renderBeijingGreeting(){document.getElementById('timeGreeting').textContent=getBeijingGreeting()}
+  renderBeijingGreeting();
+  setInterval(renderBeijingGreeting,60000);
   document.querySelector('[data-weight]').textContent = profile.weight || '待完善'; document.querySelector('[data-weight-unit]').textContent = profile.weight ? 'kg' : ''; document.querySelector('[data-bodyfat]').textContent = profile.bodyFat || '暂无'; document.querySelector('[data-bodyfat-unit]').textContent = profile.bodyFat ? '%' : ''; document.querySelector('[data-bmi]').textContent = targets.bmi;
   function renderMeals(){ const items=FOOD_APP.planForDate().slice(0,4);document.getElementById('homeMeals').innerHTML = items.length?items.map(item => `<a class="meal-row" href="recipe-detail.html?id=${encodeURIComponent(item.id)}" style="text-decoration:none"><img class="meal-thumb" src="${item.image || 'app-icon.svg'}" alt="${item.name}"><div><h3>${item.meal} · ${item.name}</h3><p>${item.grams} g · 蛋白质 ${item.protein || '--'} g · 碳水 ${item.carbs || '--'} g</p></div><b>${item.calories} kcal</b></a>`).join(''):'<div class="empty">今天还没有餐饮，前往食谱库或饮食计划添加。</div>'; }
   function renderExercises(){ const ids=FOOD_APP.get('workoutPlan');document.getElementById('homeExercises').innerHTML = ids.slice(0,4).map(id=>FOOD_APP.workouts.find(x=>x.id===id)).filter(Boolean).map(item => `<div class="exercise-item"><div class="exercise-icon"><i data-lucide="${item.icon}"></i></div><div><b>${item.name}</b><span>${item.minutes} 分钟 · ${item.focus}</span></div><a class="icon-btn" href="exercise.html" title="开始 ${item.name}"><i data-lucide="play"></i></a></div>`).join('')||'<div class="empty">去运动塑形页面选择今日训练</div>'; if(window.lucide) lucide.createIcons(); }
@@ -171,7 +182,7 @@
   document.querySelectorAll('[data-period]').forEach(button=>button.onclick=()=>{activePeriod=button.dataset.period;activeRecord=0;document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===button));renderHistorySelect();renderChartContent();historyDetail.classList.add('open');rememberChartView()});
   historySelect.onchange=()=>{activeRecord=Number(historySelect.value);renderChartContent();historyDetail.classList.add('open');rememberChartView()};
   document.getElementById('nutritionChart').onclick=()=>historyDetail.classList.toggle('open');
-  const today=new Date(),dateText=new Intl.DateTimeFormat('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(today),dateKey=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`,quotes=[
+  const today=new Date(),dateFormatter=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'long',day:'numeric',weekday:'long'}),dateText=dateFormatter.format(today),beijingDateParts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(today).filter(part=>part.type!=='literal').map(part=>[part.type,part.value])),dateKey=`${beijingDateParts.year}-${beijingDateParts.month}-${beijingDateParts.day}`,quotes=[
     ['不积跬步，无以至千里；不积小流，无以成江海。','荀子'],
     ['千里之行，始于足下。','《道德经》'],
     ['天行健，君子以自强不息。','《周易》'],
