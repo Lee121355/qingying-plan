@@ -341,6 +341,169 @@ const FOOD_APP = {
     const direction = calorieGap > 200 ? `当前计划还可补充约 ${calorieGap} kcal` : calorieGap < -200 ? `当前计划比目标高约 ${Math.abs(calorieGap)} kcal` : '当前计划热量接近目标';
     return { reply: `${direction}。建议优先检查全天蛋白质是否达到约 ${target.protein} g、碳水是否接近 ${target.carbs} g，再用蔬菜和清淡烹调完善搭配。结合你问的“${question}”，下面这些日常餐饮可以直接加入计划。`, suggestions };
   },
+  lightMealAssistantResponse(question, history = []) {
+    const profile = this.get('profile'), target = this.targets(profile), plan = this.planForDate();
+    const previous = history.map(item => String(item?.content || '')).join('。');
+    const userMemory = history.filter(item => item?.role === 'user').map(item => String(item.content || '')).join('。');
+    const context = userMemory + '。' + question;
+    const disclaimer = '本轻食方案仅为饮食搭配参考，不构成医疗、临床诊疗建议。患有基础疾病，请遵从医生或营养师专业指导。';
+    const explicitMeal = question.includes('早餐') ? '早餐' : question.includes('午餐') ? '午餐' : question.includes('晚餐') ? '晚餐' : question.includes('加餐') ? '加餐' : '';
+    const meal = explicitMeal || (new Date().getHours() < 10 ? '早餐' : new Date().getHours() < 15 ? '午餐' : '晚餐');
+    const goalOptions = ['减脂', '维持体重', '增肌', '控糖', '养胃'];
+    const statedGoal = goalOptions.find(item => question.includes(item)) || goalOptions.find(item => userMemory.includes(item));
+    const goal = statedGoal || profile.goal || '';
+    const budgetMatch = question.match(/(?:预算|不超过|控制在)[^0-9]{0,4}([0-9]+(?:[.][0-9]+)?)[ ]*元/);
+    const budget = budgetMatch ? Number(budgetMatch[1]) : 0;
+    const flavor = ['清淡', '酸甜', '咸香', '温热'].find(item => context.includes(item)) || '';
+    const restrictionDefs = [
+      { label: '蛋类', words: ['鸡蛋', '蛋类'], blocks: ['鸡蛋'] },
+      { label: '乳制品', words: ['牛奶', '乳制品', '奶制品'], blocks: ['牛奶', '酸奶'] },
+      { label: '坚果', words: ['坚果', '花生', '杏仁', '核桃'], blocks: ['坚果', '杏仁', '核桃'] },
+      { label: '海鲜', words: ['海鲜', '虾', '虾仁'], blocks: ['虾', '鱼', '三文鱼', '鳕鱼', '金枪鱼'] },
+      { label: '鱼类', words: ['鱼类', '鱼肉'], blocks: ['鱼', '三文鱼', '鳕鱼', '金枪鱼'] },
+      { label: '大豆', words: ['大豆', '豆制品', '豆腐'], blocks: ['豆腐', '豆浆', '毛豆'] },
+      { label: '牛肉', words: ['牛肉'], blocks: ['牛肉', '牛腱'] },
+      { label: '猪肉', words: ['猪肉'], blocks: ['猪肉', '里脊'] },
+      { label: '麸质', words: ['麸质', '小麦'], blocks: ['面包', '吐司', '面条', '燕麦'] }
+    ];
+    const restrictions = restrictionDefs.filter(item => item.words.some(word => ['不吃' + word, '不要' + word, '对' + word + '过敏', word + '过敏', '忌' + word, '不能吃' + word].some(phrase => context.includes(phrase))));
+    const blockedWords = restrictions.flatMap(item => item.blocks);
+    const recognized = this.ingredients.filter(item => context.includes(item.name));
+    const gramsEntries = recognized.flatMap(item => {
+      const match = question.match(new RegExp(item.name + '[^0-9]{0,4}([0-9]+(?:[.][0-9]+)?)[ ]*(?:g|克)', 'i'));
+      return match ? [{ item, grams: Number(match[1]) }] : [];
+    });
+    const asksCalories = /热量|卡路里|大卡/.test(question);
+    const asksReplacement = /替换|代替|换成/.test(question);
+    const asksCompatibility = /能不能搭配|可以搭配|一起吃|搭不搭/.test(question);
+    const asksAnalysis = /营养分析|营养怎么样|营养成分/.test(question);
+    const asksRecommendation = /推荐|搭配|吃什么|吃啥|想吃|安排|补齐|方案|食谱|怎么做|做法/.test(question);
+
+    if (asksCalories && recognized.length && !gramsEntries.length) {
+      return { reply: '请告诉我这些食材大约各有多少克？我会按实际分量估算整餐热量。', suggestions: [] };
+    }
+    if ((asksCalories || asksAnalysis) && gramsEntries.length) {
+      const totals = gramsEntries.reduce((sum, entry) => {
+        const ratio = entry.grams / 100;
+        sum.calories += entry.item.kcal * ratio;
+        sum.protein += entry.item.protein * ratio;
+        sum.carbs += entry.item.carbs * ratio;
+        sum.fat += entry.item.fat * ratio;
+        sum.fiber += entry.item.fiber * ratio;
+        return sum;
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+      const details = gramsEntries.map(entry => '- ' + entry.item.name + ' ' + entry.grams + '克：约 ' + Math.round(entry.item.kcal * entry.grams / 100) + ' kcal').join('\n');
+      return { reply: ['【热量与营养估算】', details, '', '- 合计热量：约 ' + Math.round(totals.calories) + ' kcal', '- 蛋白质：约 ' + totals.protein.toFixed(1) + '克', '- 碳水：约 ' + totals.carbs.toFixed(1) + '克', '- 脂肪：约 ' + totals.fat.toFixed(1) + '克', '- 膳食纤维：约 ' + totals.fiber.toFixed(1) + '克', '', '【轻食建议】', '优先确保优质蛋白与蔬菜充足；烹调油每餐建议控制在 5克左右，酱汁单独少量使用。', '', disclaimer].join('\n'), suggestions: [] };
+    }
+
+    const replacementMap = {
+      '鸡胸肉': '北豆腐、虾仁或瘦牛肉可提供相近的优质蛋白',
+      '米饭': '糙米饭、玉米、红薯或藜麦更适合作为复合碳水',
+      '牛奶': '无糖豆浆或无糖植物奶可替换，注意选择强化钙产品',
+      '鸡蛋': '北豆腐或无糖希腊酸奶可补充蛋白质',
+      '面包': '燕麦、红薯或玉米可替代精制面包',
+      '沙拉酱': '无糖酸奶加柠檬汁，或少量橄榄油加黑胡椒更轻盈'
+    };
+    if (asksReplacement) {
+      const source = Object.keys(replacementMap).find(item => context.includes(item));
+      if (!source) return { reply: '你想替换哪一种食材？告诉我原食材即可，我会按蛋白质、碳水或脂肪功能给出等量轻食替换。', suggestions: [] };
+      return { reply: ['【食材替换建议】', '- 原食材：' + source, '- 推荐替换：' + replacementMap[source], '', '替换时保留原餐的营养角色，不额外增加浓酱、糖或烹调油。' + (restrictions.length ? '\n已记录忌口：' + restrictions.map(item => item.label).join('、') + '，替换方案会完全规避。' : ''), '', disclaimer].join('\n'), suggestions: [] };
+    }
+    if (asksCompatibility || asksAnalysis) {
+      if (recognized.length < 2) return { reply: '请再告诉我另一种想搭配的食材，我会从营养互补、分量和忌口三个方面判断。', suggestions: [] };
+      const names = recognized.map(item => item.name).join('、');
+      const proteinFood = recognized.some(item => item.protein >= 10), carbFood = recognized.some(item => item.carbs >= 15), fiberFood = recognized.some(item => item.fiber >= 2);
+      return { reply: ['【搭配判断】', names + '可以搭配。', '', '【营养逻辑】', '- 优质蛋白：' + (proteinFood ? '当前组合已有较好来源' : '偏少，建议补鸡胸肉、鱼虾、鸡蛋或豆腐'), '- 复合碳水：' + (carbFood ? '当前分量可作为主食基础' : '建议补少量糙米、玉米或红薯'), '- 膳食纤维：' + (fiberFood ? '当前组合有所覆盖' : '建议再加 150至200克深色蔬菜'), '', '烹调优先蒸、煮、凉拌或空气炸，整餐用油控制在约 5克。', '', disclaimer].join('\n'), suggestions: [] };
+    }
+
+    if (/什么是轻食|轻食是什么/.test(question)) {
+      return { reply: ['【轻食说明】', '轻食不是只吃沙拉，也不是极端节食。它强调控制烹调油和精制糖，用优质蛋白、复合碳水及充足蔬菜组成均衡餐盘。', '', '- 优质蛋白：鱼虾、鸡胸肉、鸡蛋、豆腐或无糖乳制品', '- 复合碳水：糙米、燕麦、玉米、红薯或全麦主食', '- 蔬菜：每餐约占餐盘的一半', '- 调味：少油、少盐，避免浓酱和油炸', '', disclaimer].join('\n'), suggestions: [] };
+    }
+    if (/复合碳水/.test(question) && /什么|哪些|举例|包括/.test(question)) {
+      return { reply: ['【复合碳水选择】', '日常可选燕麦、糙米、藜麦、玉米、红薯、荞麦面和全麦面包。它们通常比精制米面提供更多膳食纤维，饱腹感也更稳定。', '', '控糖时仍要控制总量，建议与优质蛋白和蔬菜同餐搭配，不把粗粮当作可以无限吃的食物。', '', disclaimer].join('\n'), suggestions: [] };
+    }
+    if (/蛋白质/.test(question) && /多少|需求|需要|目标/.test(question)) {
+      if (!Number(profile.weight)) return { reply: '请告诉我当前体重是多少公斤？我会结合目标估算每日蛋白质需求。', suggestions: [] };
+      const proteinGoal = target.ready ? target.protein : Math.round(Number(profile.weight) * (goal === '增肌' ? 1.8 : 1.55));
+      return { reply: ['【蛋白质参考】', '按你当前体重与目标估算，每日可参考约 ' + proteinGoal + '克蛋白质，建议分配到三餐，而不是集中在一餐。', '', '可优先选择鸡胸肉、鱼虾、鸡蛋、豆腐、无糖酸奶或低脂牛奶；实际需求还会受训练量和健康状况影响。', '', disclaimer].join('\n'), suggestions: [] };
+    }
+    if (/控糖/.test(question) && /怎么|如何|原则|注意/.test(question)) {
+      return { reply: ['【日常控糖原则】', '- 主食优先燕麦、糙米、玉米、红薯等复合碳水，并控制分量', '- 每餐搭配蛋白质和非淀粉蔬菜，减少单独吃精制主食', '- 不喝含糖饮料，酱汁和加工食品注意隐藏糖', '- 水果保留完整果肉，避免果汁，分次适量食用', '', disclaimer].join('\n'), suggestions: [] };
+    }
+
+    if (!asksRecommendation) {
+      return { reply: '我可以帮你做轻食推荐、食材替换、热量估算或营养分析。你现在最想解决哪一个问题？', suggestions: [] };
+    }
+
+    if (asksRecommendation && !goal) {
+      return { reply: '这次轻食搭配最优先的目标是什么：减脂、维持体重、增肌、控糖还是养胃？', suggestions: [] };
+    }
+
+    const lightRecipeIds = ['oat-milk-egg', 'egg-toast-milk', 'broccoli-chicken-rice', 'shrimp-mushroom-tofu-soup', 'tomato-tofu-greens', 'seaweed-egg-corn', 'avocado-egg-toast', 'tomato-egg-noodles'];
+    const availableNames = recognized.map(item => item.name);
+    let candidates = this.recipes.filter(recipe => lightRecipeIds.includes(recipe.id) && recipe.meal === meal && !blockedWords.some(word => (recipe.name + recipe.ingredients.join('')).includes(word)));
+    if (!candidates.length && !explicitMeal) candidates = this.recipes.filter(recipe => lightRecipeIds.includes(recipe.id) && !blockedWords.some(word => (recipe.name + recipe.ingredients.join('')).includes(word)));
+    const unusedCandidates = candidates.filter(recipe => !previous.includes(recipe.name));
+    if (unusedCandidates.length) candidates = unusedCandidates;
+    const score = recipe => {
+      const text = recipe.name + recipe.ingredients.join('');
+      let value = availableNames.filter(name => text.includes(name)).length * 20;
+      if (goal === '增肌' || /高蛋白|补蛋白/.test(question)) value += recipe.protein;
+      if (goal === '减脂') value += recipe.protein * 1.5 - recipe.calories / 20;
+      if (goal === '控糖') value += 60 - recipe.carbs;
+      if (goal === '养胃' && /汤|燕麦|面/.test(recipe.name)) value += 25;
+      if (budget > 0 && budget <= 25 && /鸡蛋|豆腐|燕麦|玉米/.test(text)) value += 22;
+      if (flavor === '清淡' && /汤|豆腐|燕麦/.test(recipe.name)) value += 18;
+      if (flavor === '酸甜' && /番茄/.test(text)) value += 18;
+      if (flavor === '温热' && /汤|燕麦|面/.test(recipe.name)) value += 18;
+      return value;
+    };
+    candidates.sort((a, b) => score(b) - score(a));
+    if (!candidates.length) {
+      return { reply: '我已记录你的忌口，但当前食谱中没有可安全匹配的方案。你可以接受豆制品作为这餐的蛋白质来源吗？', suggestions: [] };
+    }
+    const count = /三天|多天|一周/.test(question) ? 3 : Math.min(2, candidates.length);
+    const selected = candidates.slice(0, count), primary = selected[0];
+    const recipeText = primary.name + primary.ingredients.join('');
+    const personsMatch = question.match(/(\d+)\s*人/), persons = personsMatch ? Math.max(1, Math.min(8, Number(personsMatch[1]))) : 1;
+    const scaleIngredient = text => persons === 1 ? text : text.replace(/(\d+(?:\.\d+)?)/g, number => String(Math.round(Number(number) * persons * 10) / 10));
+    const ingredients = primary.ingredients.map(scaleIngredient);
+    const seasoningWords = ['油', '生抽', '盐', '胡椒', '酱'];
+    const seasonings = ingredients.filter(item => seasoningWords.some(word => item.includes(word)));
+    const foodIngredients = ingredients.filter(item => !seasoningWords.some(word => item.includes(word)));
+    const mains = foodIngredients.slice(0, 2), sides = foodIngredients.slice(2);
+    const calories = Math.round(primary.calories * persons);
+    const planCalories = plan.reduce((sum, item) => sum + Number(item.calories || 0), 0);
+    const calorieNote = target.ready ? '你今天已计划约 ' + planCalories + ' kcal，日目标约 ' + target.calories + ' kcal。' : '';
+    const conditionNote = (flavor ? '口味按“' + flavor + '”方向搭配。' : '') + (budget ? '预算参考 ' + budget + '元，优先使用日常易购食材。' : '');
+    const restrictionNote = restrictions.length ? '已完全规避：' + restrictions.map(item => item.label).join('、') + '。' : '本轮暂未提供过敏或忌口信息。';
+    const substitute = recipeText.includes('鸡胸肉') ? '鸡胸肉可等量换成去皮鱼肉或北豆腐。' : recipeText.includes('虾') ? '虾仁可换成鸡胸肉或北豆腐。' : recipeText.includes('鸡蛋') ? '鸡蛋可按忌口换成北豆腐或无糖希腊酸奶。' : '蛋白质食材可按相近重量在鱼肉、鸡胸肉和豆腐间替换。';
+    const goalLogic = goal === '增肌' ? '提高优质蛋白供给，并保留适量复合碳水支持训练恢复。' : goal === '控糖' ? '控制主食分量，选择低 GI 复合碳水并搭配蛋白质减缓餐后波动。' : goal === '养胃' ? '采用温热、少油和较柔软的烹调方式，减少刺激性调味。' : goal === '维持体重' || goal === '维持健康' ? '用蛋白质、复合碳水和蔬菜组成均衡餐盘。' : '控制总热量，提高蛋白质和膳食纤维，增强饱腹感。';
+    const reply = [
+      '【轻食搭配方案】',
+      '- 餐次：' + primary.meal,
+      '- ' + primary.name + '｜制作难度：简单｜预估耗时：' + primary.time + '分钟｜参考热量：' + calories + ' kcal',
+      '简单说明：' + (primary.fit || '清爽日常') + '，少油烹调。' + goalLogic + (conditionNote ? ' ' + conditionNote : '') + (calorieNote ? ' ' + calorieNote : ''),
+      '',
+      '【食材清单】',
+      '- 主料：' + (mains.join('、') || '按食谱分量准备'),
+      '- 辅料：' + (sides.join('、') || '时令蔬菜 150克'),
+      '- 调味：' + (seasonings.join('、') || '食用油 3至5克、少量盐、黑胡椒') + '；不额外加糖',
+      '',
+      '【简易制作步骤】',
+      ...primary.steps.slice(0, 5).map((step, index) => (index + 1) + '. ' + step),
+      '',
+      '【轻食营养小贴士】',
+      '- 搭配逻辑：蛋白质约 ' + Math.round(primary.protein * persons) + '克，碳水约 ' + Math.round(primary.carbs * persons) + '克；' + goalLogic,
+      '- 忌口提醒：' + restrictionNote,
+      '- 食材替换：' + substitute,
+      '- 分量调整：当前按 ' + persons + ' 人份估算；运动量较大可增加约 30至50克熟重主食，减脂期优先增加蔬菜而非酱汁。',
+      '',
+      disclaimer
+    ].join('\n');
+    const suggestions = selected.map(recipe => ({ id: recipe.id, meal: recipe.meal, name: recipe.name, calories: Math.round(recipe.calories * persons), grams: Math.round(recipe.grams * persons), protein: Math.round(recipe.protein * persons), carbs: Math.round(recipe.carbs * persons), image: recipe.image || 'app-icon.svg' }));
+    return { reply, suggestions };
+  },
   async resolveAIEndpoint() {
     if (this.aiEndpoint !== undefined) return this.aiEndpoint;
     this.aiEndpoint = window.QINGYING_AI_ENDPOINT || localStorage.getItem('food.aiEndpoint') || '';
@@ -353,7 +516,7 @@ const FOOD_APP = {
   },
   async askAssistant(question, history = []) {
     const endpoint = await this.resolveAIEndpoint();
-    const fallback = () => ({ ...this.localAssistantResponse(question), source: 'local', model: '本地营养规则' });
+    const fallback = () => ({ ...this.lightMealAssistantResponse(question, history), source: 'local', model: '轻食营养规则' });
     if (!endpoint) return fallback();
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
     try {
@@ -425,7 +588,7 @@ function initCommon(active = 'home') {
 
 function initAssistant() {
   if (document.querySelector('.ai-fab')) return;
-  document.body.insertAdjacentHTML('beforeend', `<button class="ai-fab" type="button" title="AI 营养助手" aria-label="打开 AI 营养助手"><i data-lucide="sparkles"></i></button><section class="ai-panel" aria-label="AI 营养助手"><header class="ai-panel-head"><div><strong>AI 营养助手</strong><span data-ai-status>智能搭配 · 支持多轮对话</span></div><div class="ai-head-actions"><button class="icon-btn" type="button" data-ai-clear title="清空对话"><i data-lucide="trash-2"></i></button><button class="icon-btn" type="button" data-ai-close title="关闭"><i data-lucide="x"></i></button></div></header><div class="ai-messages"></div><div class="ai-quick" aria-label="快捷提问"><button type="button">补齐今天的营养</button><button type="button">推荐高蛋白晚餐</button><button type="button">安排三天家常餐</button></div><form class="ai-compose"><input type="text" aria-label="向 AI 提问" placeholder="继续询问饮食与营养搭配"><button type="submit" aria-label="发送"><i data-lucide="send"></i></button></form></section>`);
+  document.body.insertAdjacentHTML('beforeend', `<button class="ai-fab" type="button" title="AI 轻食助手" aria-label="打开 AI 轻食助手"><i data-lucide="sparkles"></i></button><section class="ai-panel" aria-label="AI 轻食助手"><header class="ai-panel-head"><div><strong>AI 轻食助手</strong><span data-ai-status>个性化轻食 · 支持多轮对话</span></div><div class="ai-head-actions"><button class="icon-btn" type="button" data-ai-clear title="清空对话"><i data-lucide="trash-2"></i></button><button class="icon-btn" type="button" data-ai-close title="关闭"><i data-lucide="x"></i></button></div></header><div class="ai-messages"></div><div class="ai-quick" aria-label="快捷提问"><button type="button">补齐今天的营养</button><button type="button">推荐减脂轻食晚餐</button><button type="button">安排三天家常轻食</button></div><form class="ai-compose"><input type="text" aria-label="向 AI 提问" placeholder="说说目标、忌口或现有食材"><button type="submit" aria-label="发送"><i data-lucide="send"></i></button></form></section>`);
   const panel=document.querySelector('.ai-panel'),fab=document.querySelector('.ai-fab'),messages=panel.querySelector('.ai-messages'),input=panel.querySelector('input'),panelHead=panel.querySelector('.ai-panel-head'),status=panel.querySelector('[data-ai-status]');
   const positionBounds=el=>({maxLeft:Math.max(8,innerWidth-el.offsetWidth-8),maxTop:Math.max(8,innerHeight-el.offsetHeight-(innerWidth<=720?88:8))});
   const restorePosition=(el,key)=>{try{const pos=JSON.parse(localStorage.getItem(key));if(!pos)return;const bounds=positionBounds(el);el.style.left=`${Math.max(8,Math.min(pos.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(pos.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}catch{}};
@@ -452,11 +615,11 @@ function initAssistant() {
     (entry.suggestions||[]).forEach(item=>{const card=document.createElement('article');card.className='ai-suggestion';const title=document.createElement('strong');title.textContent=item.meal+' · '+item.name;const meta=document.createElement('span');meta.textContent=item.calories+' kcal · '+(item.grams||'--')+' g · 蛋白 '+(item.protein||0)+' g · 碳水 '+(item.carbs||0)+' g';card.append(title,meta);addSuggestionActions(card,item);response.appendChild(card)});
     messages.appendChild(response);
   };
-  const renderConversation=()=>{messages.innerHTML='';if(!history.length)appendMessage({role:'assistant',content:'可以连续问我饮食搭配、热量缺口或一周安排。推荐结果可以直接加入饮食计划。'});else history.forEach(appendMessage);messages.scrollTop=messages.scrollHeight};
+  const renderConversation=()=>{messages.innerHTML='';if(!history.length)appendMessage({role:'assistant',content:'告诉我你的目标、忌口、现有食材或预算。我会记住本轮条件，给出低油、控糖、高纤维的轻食建议；推荐餐食可直接加入计划。'});else history.forEach(appendMessage);messages.scrollTop=messages.scrollHeight};
   renderConversation();
   const open=()=>{panel.classList.add('open');input.focus()};
   fab.onclick=()=>{if(fab.dataset.justDragged)return;if(panel.classList.contains('open'))panel.classList.remove('open');else{panel.classList.add('open');restorePosition(panel,'food.aiPanelPosition');input.focus()}};panel.querySelector('[data-ai-close]').onclick=()=>panel.classList.remove('open');
-  panel.querySelector('[data-ai-clear]').onclick=()=>{history=[];persistHistory();status.textContent='智能搭配 · 支持多轮对话';renderConversation();input.focus()};
+  panel.querySelector('[data-ai-clear]').onclick=()=>{history=[];persistHistory();status.textContent='个性化轻食 · 支持多轮对话';renderConversation();input.focus()};
   document.querySelectorAll('[data-ai-open]').forEach(button=>button.addEventListener('click',open));
   panel.querySelectorAll('.ai-quick button').forEach(button=>button.onclick=()=>{input.value=button.textContent;panel.querySelector('form').requestSubmit()});
   panel.querySelector('form').onsubmit=async e=>{e.preventDefault();const question=input.value.trim();if(!question)return;const context=history.map(({role,content})=>({role,content}));const userEntry={role:'user',content:question};history.push(userEntry);appendMessage(userEntry);persistHistory();input.value='';input.disabled=true;const submit=panel.querySelector('form button');submit.disabled=true;const loading=document.createElement('div');loading.className='ai-message assistant ai-loading';loading.textContent='正在结合你的资料和饮食计划分析…';messages.appendChild(loading);messages.scrollTop=messages.scrollHeight;const result=await FOOD_APP.askAssistant(question,context);loading.remove();const assistantEntry={role:'assistant',content:result.reply,model:result.model,suggestions:result.suggestions||[]};history.push(assistantEntry);persistHistory();appendMessage(assistantEntry);status.textContent=result.model;input.disabled=false;submit.disabled=false;input.focus();messages.scrollTop=messages.scrollHeight};

@@ -119,8 +119,8 @@ img { display: block; max-width: 100%; }
 .ai-panel-head button { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
 .ai-head-actions { display: flex; gap: 6px; }
 .ai-messages { padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 9px; background: #f8faf8; }
-.ai-message { max-width: 88%; padding: 9px 10px; border-radius: 7px; font-size: 9px; line-height: 1.65; }
-.ai-message.assistant { align-self: flex-start; color: #315843; background: #e7f1ea; border-radius: 3px 7px 7px 7px; }
+.ai-message { max-width: 88%; padding: 9px 10px; border-radius: 7px; font-size: 9px; line-height: 1.65; overflow-wrap: anywhere; }
+.ai-message.assistant { max-width: 96%; align-self: flex-start; color: #315843; background: #e7f1ea; border-radius: 3px 7px 7px 7px; white-space: pre-wrap; }
 .ai-message.user { align-self: flex-end; color: #fff; background: var(--green); border-radius: 7px 3px 7px 7px; }
 .ai-response { align-self: stretch; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .ai-model { color: var(--muted); font-size: 8px; }
