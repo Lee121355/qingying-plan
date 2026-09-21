@@ -1,7 +1,7 @@
 const FOOD_APP = {
   defaults: {
     profile: { name: '用户', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' },
-    water: { total: 0, target: 2000, cupSize: 200, cupType: '玻璃杯' },
+    water: { total: 0, target: 2000, cupSize: 200, cupType: '玻璃杯', date: '' },
     plan: [],
     exercises: [],
     workoutPlan: [],
@@ -13,12 +13,18 @@ const FOOD_APP = {
     checkinQuoteIndex: null
   },
   recipes: [
-    { id:'oat', meal:'早餐', name:'燕麦酸奶莓果碗', calories:420, grams:320, protein:24, carbs:52, time:10, fit:'控糖、通勤早餐', tags:['高纤维','均衡碳水'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['燕麦 45 g','无糖酸奶 180 g','蓝莓 60 g','水煮蛋 1 个'], steps:['燕麦用热水浸泡 5 分钟。','加入无糖酸奶，铺上蓝莓。','搭配一枚水煮蛋，食用前拌匀。'] },
-    { id:'chicken', meal:'午餐', name:'香煎鸡胸糙米碗', calories:580, grams:460, protein:46, carbs:67, time:25, fit:'减脂、力量训练日', tags:['高蛋白','少油'], image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80', ingredients:['鸡胸肉 160 g','糙米饭 150 g','西兰花 120 g','橄榄油 5 g'], steps:['鸡胸肉用黑胡椒和少量盐腌制。','平底锅刷油，两面各煎约 4 分钟。','糙米和焯熟西兰花装碗，放入切片鸡胸。'] },
-    { id:'soup', meal:'晚餐', name:'虾仁菌菇暖汤', calories:390, grams:420, protein:32, carbs:29, time:20, fit:'晚间轻食、控脂', tags:['低脂','少盐'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['虾仁 120 g','混合菌菇 150 g','嫩豆腐 100 g','青菜 80 g'], steps:['菌菇入锅煸出香味，加水煮沸。','加入豆腐与虾仁煮 4 分钟。','放青菜，以胡椒和少量盐调味。'] },
-    { id:'avocado', meal:'早餐', name:'牛油果全麦吐司', calories:365, grams:245, protein:18, carbs:38, time:12, fit:'需要饱腹感的人群', tags:['优质脂肪','高纤维'], image:'https://images.unsplash.com/photo-1603046891744-76e6300f82ef?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','牛油果 1/2 个','鸡蛋 1 个','番茄 50 g'], steps:['吐司烘烤至表面微脆。','牛油果压泥铺在吐司上。','加入水波蛋和番茄，以黑胡椒调味。'] },
-    { id:'salmon', meal:'午餐', name:'香草三文鱼时蔬盘', calories:520, grams:390, protein:39, carbs:34, time:30, fit:'增肌、补充优质脂肪', tags:['Omega-3','高蛋白'], image:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=900&q=80', ingredients:['三文鱼 150 g','小土豆 120 g','芦笋 100 g','柠檬 1/4 个'], steps:['三文鱼用香草、黑胡椒腌制。','与小土豆一同入烤箱烤 18 分钟。','加入焯熟芦笋，食用前挤柠檬汁。'] },
-    { id:'tofu', meal:'晚餐', name:'番茄豆腐杂蔬煲', calories:348, grams:440, protein:25, carbs:31, time:22, fit:'素食、晚餐控热量', tags:['植物蛋白','轻负担'], image:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80', ingredients:['北豆腐 180 g','番茄 180 g','杂蔬 150 g','生抽 5 ml'], steps:['番茄切块炒软，加入少量清水。','放入豆腐与杂蔬炖煮 10 分钟。','以少量生抽调味，撒葱花即可。'] }
+    { id:'oat-milk-egg', meal:'早餐', name:'燕麦牛奶鸡蛋早餐', calories:438, grams:390, protein:23, carbs:55, time:12, fit:'通勤早餐、需要稳定饱腹感', tags:['高纤维','易准备'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['即食燕麦 45 g','低脂牛奶 250 ml','鸡蛋 1 个','香蕉 60 g'], steps:['鸡蛋放入冷水锅，水开后转中火煮 8 分钟，捞出浸冷水备用。','燕麦倒入小锅，加入牛奶后用中小火加热，期间持续搅拌防止粘底。','煮约 4 分钟，看到燕麦变软、牛奶略微浓稠时关火。','香蕉切片铺在燕麦上，不额外加糖；需要甜味可用熟香蕉压泥拌入。','鸡蛋去壳对半切开，与燕麦一起食用。牛奶冒小泡即可，不要长时间沸腾。'] },
+    { id:'egg-toast-milk', meal:'早餐', name:'鸡蛋全麦吐司配牛奶', calories:410, grams:360, protein:25, carbs:42, time:10, fit:'学生、上班族的快速早餐', tags:['日常食材','高蛋白'], image:'https://images.unsplash.com/photo-1603046891744-76e6300f82ef?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','鸡蛋 2 个','低脂牛奶 200 ml','番茄 80 g'], steps:['番茄洗净切片，鸡蛋打入碗中，加一汤匙清水搅匀。','不粘锅小火预热，刷约 2 g 食用油，倒入蛋液。','待底部凝固后从边缘向中间推拢，蛋液刚完全凝固时关火，避免炒老。','吐司用烤箱或平底锅烘 2 至 3 分钟，表面微脆即可。','将鸡蛋与番茄夹入吐司，牛奶温热至不烫口，一起食用。'] },
+    { id:'tomato-egg-noodles', meal:'午餐', name:'番茄鸡蛋面', calories:520, grams:480, protein:24, carbs:72, time:20, fit:'快速午餐、运动后的均衡正餐', tags:['一锅完成','家常'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['鲜面条 120 g','鸡蛋 2 个','番茄 200 g','青菜 100 g','食用油 5 g'], steps:['番茄顶部划十字，用热水烫 30 秒后去皮切块；青菜洗净沥水。','鸡蛋打散。不粘锅中火加 3 g 油，倒入蛋液炒至八成熟，盛出备用。','原锅加剩余油和番茄，中火翻炒 3 至 4 分钟，压出汤汁。','加入 450 ml 热水煮开，放入面条并用筷子拨散，按包装时间煮至无硬芯。','放入青菜和炒蛋再煮 1 分钟，加少量盐与白胡椒调味。','先尝汤再补盐，面条能轻松夹断且中心无白点即可出锅。'] },
+    { id:'broccoli-chicken-rice', meal:'午餐', name:'西兰花鸡胸肉米饭', calories:575, grams:500, protein:46, carbs:64, time:28, fit:'减脂期、力量训练日', tags:['高蛋白','少油'], image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80', ingredients:['鸡胸肉 160 g','米饭 150 g','西兰花 180 g','食用油 5 g','生抽 5 ml'], steps:['鸡胸肉横切成约 1 cm 厚片，用生抽、黑胡椒和一汤匙清水抓匀，腌 10 分钟。','西兰花切小朵，在淡盐水中浸泡后冲净；沸水焯 90 秒，捞出沥干。','不粘锅中火预热，刷油后铺入鸡胸肉，保持单层不要堆叠。','第一面煎约 3 分钟，边缘变白后翻面，再煎 2 至 3 分钟。','取最厚一片切开，中心完全变白且仍有汁水即熟；静置 2 分钟后切条。','米饭、西兰花和鸡胸肉分区装盘，可淋少量锅中原汁，不再额外加油。'] },
+    { id:'tomato-egg-rice', meal:'午餐', name:'番茄炒蛋配米饭', calories:560, grams:500, protein:24, carbs:70, time:18, fit:'家庭午餐、食欲较差时', tags:['家常','酸甜开胃'], image:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80', ingredients:['番茄 250 g','鸡蛋 2 个','米饭 150 g','青菜 100 g','食用油 6 g'], steps:['番茄去蒂切成小块；鸡蛋打散，加入一汤匙清水使口感更嫩。','锅中加一半油，中火烧热后倒入蛋液，快速推炒至八成熟后盛出。','原锅放剩余油和番茄，加两汤匙水，中火炒至番茄软化出汁。','倒回鸡蛋，轻轻翻匀 30 秒，用少量盐调味后立即关火。','青菜用沸水焯 1 分钟，捞出沥水。','米饭控制在一小碗，与番茄炒蛋和青菜一起装盘，汤汁浸到米饭即可。'] },
+    { id:'beef-potato-greens', meal:'晚餐', name:'土豆炖牛肉配青菜', calories:610, grams:560, protein:42, carbs:58, time:55, fit:'周末备餐、需要补充铁元素', tags:['家常炖菜','饱腹'], image:'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=900&q=80', ingredients:['牛腱肉 160 g','土豆 180 g','胡萝卜 80 g','青菜 120 g','生抽 8 ml'], steps:['牛肉切 2.5 cm 方块，冷水下锅；水开后撇去浮沫，捞出冲净。','土豆和胡萝卜去皮切滚刀块，土豆先泡清水防止变色。','锅中放牛肉、姜片和 700 ml 热水，大火煮开后转小火加盖炖 30 分钟。','加入胡萝卜、土豆和生抽，继续小火炖 15 至 20 分钟。','用筷子能轻松插入牛肉和土豆时，开盖中火收汁 2 分钟；最后尝味再决定是否加盐。','青菜另用沸水焯熟，与炖牛肉分开装盘，避免吸入过多汤汁和油脂。'] },
+    { id:'shrimp-mushroom-tofu-soup', meal:'晚餐', name:'虾仁菌菇豆腐汤', calories:385, grams:520, protein:38, carbs:24, time:22, fit:'晚间轻食、控脂期', tags:['低脂','少盐'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['虾仁 120 g','嫩豆腐 150 g','菌菇 150 g','青菜 100 g','食用油 3 g'], steps:['虾仁去虾线后擦干，加白胡椒抓匀；豆腐切 2 cm 块，菌菇去根撕开。','锅中小火加油，放菌菇翻炒约 2 分钟，闻到香味且菌菇略出水。','加入 500 ml 热水，大火煮开后转中火，放豆腐煮 3 分钟。','放入虾仁，保持汤面微沸，煮 2 至 3 分钟至虾仁弯曲变粉。','加入青菜再煮 1 分钟，少量盐和白胡椒调味。','虾仁完全不透明即可关火，避免久煮使口感变硬。'] },
+    { id:'tomato-tofu-greens', meal:'晚餐', name:'番茄豆腐青菜煲', calories:360, grams:520, protein:24, carbs:32, time:25, fit:'清淡晚餐、素食搭配', tags:['植物蛋白','一锅完成'], image:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80', ingredients:['北豆腐 200 g','番茄 220 g','青菜 150 g','菌菇 100 g','生抽 5 ml'], steps:['北豆腐切成 2 cm 厚块，用厨房纸吸去表面水分；番茄切小块。','砂锅或深锅刷少量油，中小火把豆腐两面各煎约 2 分钟，定型后盛出。','原锅放番茄，中火炒至软烂出汁，再加入菌菇翻炒 1 分钟。','加 300 ml 热水和生抽，放回豆腐，小火加盖煮 8 分钟。','加入青菜，开盖煮 1 至 2 分钟至菜叶变软。','轻轻晃锅混合，尝味后再少量补盐，保留适量汤汁即可。'] },
+    { id:'pepper-pork-rice', meal:'午餐', name:'青椒肉丝配米饭', calories:590, grams:500, protein:36, carbs:68, time:25, fit:'家庭午餐、均衡正餐', tags:['家常','优质蛋白'], image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80', ingredients:['猪里脊 140 g','青椒 150 g','米饭 150 g','食用油 6 g','生抽 6 ml'], steps:['里脊逆纹切细丝，加生抽、一汤匙清水和少量淀粉抓匀，腌 10 分钟。','青椒去籽切丝，锅中不放油先中火煸 1 分钟，盛出备用。','锅内加油，中火烧至温热，放肉丝快速划散。','肉丝表面全部变白后继续翻炒约 1 分钟，倒入青椒。','大火翻炒 30 至 45 秒，尝味后少量补盐，肉丝完全熟透即可关火。','搭配一小碗米饭，盘中再补一份凉拌或焯水蔬菜更均衡。'] },
+    { id:'egg-vegetable-fried-rice', meal:'午餐', name:'鸡蛋蔬菜炒饭', calories:535, grams:430, protein:22, carbs:70, time:16, fit:'处理剩饭、快速工作餐', tags:['快手','蔬菜丰富'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['米饭 180 g','鸡蛋 2 个','杂蔬 180 g','食用油 5 g','生抽 5 ml'], steps:['冷米饭提前打散；胡萝卜、青豆等杂蔬切成相近大小，较硬的蔬菜先焯 1 分钟。','鸡蛋打散，锅中加一半油，中火炒至七成熟后盛出。','原锅加剩余油，放杂蔬中火翻炒 2 至 3 分钟。','倒入米饭，用锅铲压散后转大火快速翻炒，让米粒均匀受热。','加入鸡蛋和生抽翻匀 1 分钟，米粒松散、锅中无明显水汽时关火。','起锅前尝味，不另外加入火腿肠等高盐加工肉。'] },
+    { id:'seaweed-egg-corn', meal:'晚餐', name:'紫菜蛋花汤配玉米', calories:405, grams:540, protein:23, carbs:55, time:18, fit:'清淡晚餐、恢复日', tags:['少油','易消化'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['鸡蛋 2 个','紫菜 5 g','玉米 180 g','嫩豆腐 100 g','青菜 80 g'], steps:['玉米洗净切段，冷水入锅，水开后转中火煮 12 至 15 分钟。','另取汤锅加入 450 ml 清水，放豆腐小火煮 3 分钟。','鸡蛋充分打散；汤保持微沸时用筷子沿锅边缓慢淋入蛋液。','等待 10 秒再轻推蛋花，加入撕碎的紫菜和青菜。','再煮 1 分钟，滴少量香油并用少量盐调味。','玉米能被筷子轻松戳入即熟，与汤一起食用，作为本餐主食。'] },
+    { id:'avocado-egg-toast', meal:'早餐', name:'牛油果鸡蛋全麦吐司', calories:420, grams:330, protein:21, carbs:40, time:15, fit:'需要较强饱腹感的早餐', tags:['优质脂肪','高纤维'], image:'https://images.unsplash.com/photo-1603046891744-76e6300f82ef?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','牛油果 70 g','鸡蛋 1 个','番茄 80 g','低脂牛奶 150 ml'], steps:['鸡蛋放入沸水中煮 8 分钟，捞出浸冷水后去壳切片。','牛油果切开去核，取果肉压成粗泥，挤少量柠檬汁防止氧化。','吐司用烤箱 180°C 烤 3 至 4 分钟，或用干锅小火烘至表面微脆。','把牛油果泥均匀抹在吐司上，铺鸡蛋片和番茄片。','撒黑胡椒即可，不额外加沙拉酱；搭配温牛奶完成一餐。'] }
   ],
   workouts: [
     { id:'bench', name:'杠铃卧推', group:'男生', icon:'weight', minutes:25, met:6.0, focus:'胸部与上肢力量', level:'进阶' },
@@ -75,6 +81,20 @@ const FOOD_APP = {
   dateKey(date = new Date()) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   },
+  startOfWeek(date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return start;
+  },
+  weekDates(date = new Date()) {
+    const start = this.startOfWeek(date);
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(start);
+      day.setDate(start.getDate() + index);
+      return this.dateKey(day);
+    });
+  },
   userId() {
     let id = localStorage.getItem('food.currentUser');
     if (id) return id;
@@ -108,8 +128,28 @@ const FOOD_APP = {
       if (savedDate && savedDate !== this.dateKey()) return {};
     }
     const value = localStorage.getItem(this.userKey(key));
+    if (key === 'water') {
+      let water;
+      try { water = value === null ? structuredClone(this.defaults.water) : JSON.parse(value); } catch { water = structuredClone(this.defaults.water); }
+      water = { ...this.defaults.water, ...water };
+      const today = this.dateKey();
+      if (water.date !== today) {
+        water.total = 0;
+        water.date = today;
+        localStorage.setItem(this.userKey('water'), JSON.stringify(water));
+      }
+      return water;
+    }
     if (value !== null) {
-      try { return JSON.parse(value); } catch {}
+      try {
+        const parsed = JSON.parse(value);
+        if (key === 'plan' && Array.isArray(parsed) && parsed.some(item => !Array.isArray(item.planDates))) {
+          const dates = this.weekDates(), migrated = parsed.map(item => ({ ...item, planDates: Array.isArray(item.planDates) && item.planDates.length ? item.planDates : dates }));
+          localStorage.setItem(this.userKey('plan'), JSON.stringify(migrated));
+          return migrated;
+        }
+        return parsed;
+      } catch {}
     }
     return structuredClone(this.defaults[key]);
   },
@@ -162,7 +202,7 @@ const FOOD_APP = {
       let cumulative = 0;
       const values = [], goals = [], segments = [], recorded = [];
       bins.forEach(bin => {
-        if (bin.start > limit) { values.push(null); goals.push(null); segments.push(0); recorded.push(false); return; }
+        if (bin.start > limit) { values.push(cumulative); goals.push(targets.ready ? Math.round(targets.calories * ((bin.start - periodStart) / 86400000 + 1)) : null); segments.push(0); recorded.push(false); return; }
         const binEnd = bin.end > limit ? limit : bin.end, list = periodEntries.filter(item => item.day >= bin.start && item.day <= binEnd), segment = sum(list).calories;
         cumulative += segment; values.push(Math.round(cumulative)); segments.push(Math.round(segment)); recorded.push(list.length > 0);
         goals.push(targets.ready ? Math.round(targets.calories * ((binEnd - periodStart) / 86400000 + 1)) : null);
@@ -201,10 +241,110 @@ const FOOD_APP = {
     node.textContent = message; node.classList.add('show'); clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => node.classList.remove('show'), 2200);
   },
-  addToPlan(item) {
+  planForDate(date = this.dateKey()) {
+    const currentWeek = this.weekDates();
+    return this.get('plan').filter(item => {
+      const planDates = Array.isArray(item.planDates) && item.planDates.length ? item.planDates : currentWeek;
+      return planDates.includes(date);
+    });
+  },
+  removePlanDate(id, date = this.dateKey()) {
+    const currentWeek = this.weekDates();
+    const plan = this.get('plan').reduce((items, item) => {
+      if (String(item.id) !== String(id)) return [...items, item];
+      const planDates = (Array.isArray(item.planDates) && item.planDates.length ? item.planDates : currentWeek).filter(day => day !== date);
+      return planDates.length ? [...items, { ...item, planDates }] : items;
+    }, []);
+    this.set('plan', plan);
+  },
+  addToPlan(item, options = {}) {
     const plan = this.get('plan');
-    const normalized = { ...item, id: item.id || `custom-${Date.now()}` };
-    plan.push(normalized); this.set('plan', plan); this.toast(`${normalized.name} 已加入完整计划`);
+    const dates = options.dates || (options.date ? [options.date] : this.weekDates());
+    const normalized = { ...item, id: item.id || `custom-${Date.now()}`, planDates: [...new Set(dates)] };
+    const existing = plan.find(entry => String(entry.id) === String(normalized.id));
+    if (existing) {
+      existing.planDates = [...new Set([...(existing.planDates || this.weekDates()), ...normalized.planDates])];
+      Object.assign(existing, normalized, { planDates: existing.planDates });
+    } else {
+      plan.push(normalized);
+    }
+    this.set('plan', plan);
+    this.toast(`${normalized.name} 已加入本周计划`);
+  },
+  openRecipeDatabase() {
+    if (!('indexedDB' in window)) return Promise.resolve(null);
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('qingying-recipes', 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        const store = db.objectStoreNames.contains('recipes') ? request.transaction.objectStore('recipes') : db.createObjectStore('recipes', { keyPath: 'id' });
+        if (!store.indexNames.contains('meal')) store.createIndex('meal', 'meal');
+        this.recipes.forEach(recipe => store.put(recipe));
+      };
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction('recipes', 'readwrite');
+        const store = transaction.objectStore('recipes');
+        this.recipes.forEach(recipe => store.put(recipe));
+        transaction.oncomplete = () => resolve(db);
+        transaction.onerror = () => reject(transaction.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  },
+  async getRecipes() {
+    try {
+      const db = await this.openRecipeDatabase();
+      if (!db) return this.recipes;
+      const recipes = await new Promise((resolve, reject) => {
+        const request = db.transaction('recipes').objectStore('recipes').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      db.close();
+      return recipes.length ? recipes : this.recipes;
+    } catch {
+      return this.recipes;
+    }
+  },
+  localAssistantReply(question) {
+    const target = this.targets(), plan = this.planForDate(), calories = plan.reduce((sum, item) => sum + Number(item.calories || 0), 0);
+    if (!target.ready) return '请先完善性别、年龄、身高、体重、目标和活动量。我仍建议每餐包含主食、优质蛋白和蔬菜，并根据实际饥饿感调整份量。';
+    const calorieGap = target.calories - calories;
+    const direction = calorieGap > 200 ? `当前计划还可补充约 ${calorieGap} kcal` : calorieGap < -200 ? `当前计划比目标高约 ${Math.abs(calorieGap)} kcal` : '当前计划热量接近目标';
+    return `${direction}。建议优先检查全天蛋白质是否达到约 ${target.protein} g、碳水是否接近 ${target.carbs} g，再用蔬菜和清淡烹调完善搭配。你的问题是“${question}”，可从最容易执行的一餐开始调整。`;
+  },
+  async resolveAIEndpoint() {
+    if (this.aiEndpoint !== undefined) return this.aiEndpoint;
+    this.aiEndpoint = window.QINGYING_AI_ENDPOINT || localStorage.getItem('food.aiEndpoint') || '';
+    if (this.aiEndpoint) return this.aiEndpoint;
+    try {
+      const response = await fetch('./ai-config.json', { cache: 'no-store' });
+      if (response.ok) this.aiEndpoint = (await response.json()).endpoint || '';
+    } catch {}
+    return this.aiEndpoint;
+  },
+  async askAssistant(question) {
+    const endpoint = await this.resolveAIEndpoint();
+    if (!endpoint) return { reply: this.localAssistantReply(question), source: 'local' };
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, profile: this.get('profile'), targets: this.targets(), plan: this.planForDate() }),
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`AI 服务返回 ${response.status}`);
+      const data = await response.json();
+      const reply = data.reply || data.choices?.[0]?.message?.content;
+      if (!reply) throw new Error('AI 服务未返回内容');
+      return { reply, source: 'deepseek' };
+    } catch {
+      return { reply: `${this.localAssistantReply(question)}（当前 DeepSeek 服务暂不可用，已使用本地建议。）`, source: 'local' };
+    } finally {
+      clearTimeout(timer);
+    }
   }
 };
 
@@ -216,7 +356,7 @@ function shell(active = 'home') {
   const items = [
     ['home', 'index.html', 'house', '今日概览'],
     ['meal', 'meal-plan.html', 'utensils', '饮食计划'],
-    ['daily', 'daily-plan.html', 'calendar-days', '完整日计划'],
+    ['daily', 'daily-plan.html', 'calendar-days', '多日计划'],
     ['recipes', 'recipes.html', 'book-open', '食谱库'],
     ['exercise', 'exercise.html', 'dumbbell', '运动塑形'],
     ['profile', 'profile.html', 'user-round-cog', '个人资料']
@@ -256,7 +396,7 @@ function initAssistant() {
   const open=()=>{panel.classList.add('open');input.focus()};
   fab.onclick=()=>{if(fab.dataset.justDragged)return;if(panel.classList.contains('open'))panel.classList.remove('open');else{panel.classList.add('open');restorePosition(panel,'food.aiPanelPosition');input.focus()}};panel.querySelector('[data-ai-close]').onclick=()=>panel.classList.remove('open');
   document.querySelectorAll('[data-ai-open]').forEach(button=>button.addEventListener('click',open));
-  panel.querySelector('form').onsubmit=e=>{e.preventDefault();const question=input.value.trim();if(!question)return;messages.insertAdjacentHTML('beforeend',`<div class="ai-message user"></div>`);messages.lastElementChild.textContent=question;input.value='';const reply=document.createElement('div');reply.className='ai-message assistant';reply.textContent='正在结合你的身体数据和今日记录分析…';messages.appendChild(reply);messages.scrollTop=messages.scrollHeight;setTimeout(()=>{const target=FOOD_APP.targets(),plan=FOOD_APP.get('plan'),cal=plan.reduce((sum,item)=>sum+Number(item.calories||0),0);reply.textContent=target.ready?`你今日计划约 ${cal} kcal，目标约 ${target.calories} kcal。建议优先补足优质蛋白和蔬菜，并根据饥饿程度调整主食份量。`:`你目前还没有完整的年龄、身高和体重数据。可以先完善个人资料，再获得更准确的热量与营养建议。`;messages.scrollTop=messages.scrollHeight},650)};
+  panel.querySelector('form').onsubmit=async e=>{e.preventDefault();const question=input.value.trim();if(!question)return;messages.insertAdjacentHTML('beforeend',`<div class="ai-message user"></div>`);messages.lastElementChild.textContent=question;input.value='';input.disabled=true;const submit=panel.querySelector('form button');submit.disabled=true;const reply=document.createElement('div');reply.className='ai-message assistant';reply.textContent='正在结合你的身体数据和本周计划分析…';messages.appendChild(reply);messages.scrollTop=messages.scrollHeight;const result=await FOOD_APP.askAssistant(question);reply.textContent=result.reply;reply.dataset.source=result.source;input.disabled=false;submit.disabled=false;input.focus();messages.scrollTop=messages.scrollHeight};
   if(window.lucide)window.lucide.createIcons();
   window.addEventListener('resize',()=>{[fab,panel].forEach(el=>{const rect=el.getBoundingClientRect(),bounds=positionBounds(el);if(rect.right>innerWidth||rect.bottom>innerHeight-(innerWidth<=720?80:0)){el.style.left=`${Math.max(8,Math.min(rect.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(rect.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}})});
 }
@@ -265,7 +405,7 @@ function showDailyReminder() {
   const reminderKey = `food.reminderShown.${encodeURIComponent(FOOD_APP.userId())}`;
   if (sessionStorage.getItem(reminderKey)) return;
   sessionStorage.setItem(reminderKey, '1');
-  const plan = FOOD_APP.get('plan');
+  const plan = FOOD_APP.planForDate();
   const total = plan.reduce((sum, item) => sum + Number(item.calories || 0), 0);
   setTimeout(() => {
     const modal = document.getElementById('dailyReminder');

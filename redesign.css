@@ -237,7 +237,7 @@ button:active, .btn:active, .icon-btn:active { transform: translateY(1px) scale(
 .hero .eyebrow { color: #a9cabb !important; }
 .hero h2 { margin: 5px 0 8px !important; color: #fff; font-size: 25px !important; }
 .hero p:not(.eyebrow) { max-width: 54ch; color: rgba(255,255,255,.7) !important; font-size: 12px !important; line-height: 1.65; }
-.hero-score { width: 86px !important; height: 86px !important; background: conic-gradient(var(--orange) 0 var(--score,0%),rgba(255,255,255,.14) var(--score,0%)) !important; }
+.hero-score { width: 86px !important; height: 86px !important; background: conic-gradient(var(--orange) 0 var(--score-angle,0deg),rgba(255,255,255,.14) var(--score-angle,0deg)) !important; transition: background .45s ease; }
 .hero-score:after { background: var(--green-deep) !important; }
 .hero-score b { color: #fff !important; }
 .quick-stats { margin-top: 0 !important; gap: 0 !important; }
@@ -330,6 +330,7 @@ button:active, .btn:active, .icon-btn:active { transform: translateY(1px) scale(
 .ingredient-filters button { min-height: 36px; padding: 0 12px !important; border-color: var(--line-strong) !important; border-radius: 4px !important; font-size: 10px !important; }
 .ingredient-filters button.active { border-color: var(--green) !important; }
 .ingredient-grid { grid-template-columns: repeat(6,minmax(0,1fr)) !important; gap: 8px !important; }
+.ingredient-grid.collapsed { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
 .ingredient-card { min-height: 144px !important; padding: 15px !important; border-radius: 5px !important; }
 .ingredient-card:hover { transform: translateY(-2px) !important; box-shadow: var(--shadow); }
 .ingredient-card.done { border-color: #84ad94 !important; background: #e1ede5 !important; box-shadow: inset 0 3px 0 var(--green); }
@@ -440,6 +441,7 @@ button:active, .btn:active, .icon-btn:active { transform: translateY(1px) scale(
   .ingredient-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
 }
 @media (max-width: 720px) {
+  .ingredient-toggle { margin-left: 0 !important; }
   body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .app-shell { display: block; min-height: 100dvh; }
   .sidebar {
