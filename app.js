@@ -516,7 +516,7 @@ const FOOD_APP = {
   },
   async askAssistant(question, history = []) {
     const endpoint = await this.resolveAIEndpoint();
-    const fallback = () => ({ ...this.lightMealAssistantResponse(question, history), source: 'local', model: '轻食营养规则' });
+    const fallback = () => ({ ...this.lightMealAssistantResponse(question, history), source: 'local', model: 'AI 营养助手 · 本地规则' });
     if (!endpoint) return fallback();
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
     try {
@@ -588,7 +588,7 @@ function initCommon(active = 'home') {
 
 function initAssistant() {
   if (document.querySelector('.ai-fab')) return;
-  document.body.insertAdjacentHTML('beforeend', `<button class="ai-fab" type="button" title="AI 轻食助手" aria-label="打开 AI 轻食助手"><i data-lucide="sparkles"></i></button><section class="ai-panel" aria-label="AI 轻食助手"><header class="ai-panel-head"><div><strong>AI 轻食助手</strong><span data-ai-status>个性化轻食 · 支持多轮对话</span></div><div class="ai-head-actions"><button class="icon-btn" type="button" data-ai-clear title="清空对话"><i data-lucide="trash-2"></i></button><button class="icon-btn" type="button" data-ai-close title="关闭"><i data-lucide="x"></i></button></div></header><div class="ai-messages"></div><div class="ai-quick" aria-label="快捷提问"><button type="button">补齐今天的营养</button><button type="button">推荐减脂轻食晚餐</button><button type="button">安排三天家常轻食</button></div><form class="ai-compose"><input type="text" aria-label="向 AI 提问" placeholder="说说目标、忌口或现有食材"><button type="submit" aria-label="发送"><i data-lucide="send"></i></button></form></section>`);
+  document.body.insertAdjacentHTML('beforeend', `<button class="ai-fab" type="button" title="AI 营养助手" aria-label="打开 AI 营养助手"><i data-lucide="sparkles"></i></button><section class="ai-panel" aria-label="AI 营养助手"><header class="ai-panel-head"><div><strong>AI 营养助手</strong><span data-ai-status>个性化轻食 · 支持多轮对话</span></div><div class="ai-head-actions"><button class="icon-btn" type="button" data-ai-clear title="清空对话"><i data-lucide="trash-2"></i></button><button class="icon-btn" type="button" data-ai-close title="关闭"><i data-lucide="x"></i></button></div></header><div class="ai-messages"></div><div class="ai-quick" aria-label="快捷提问"><button type="button">补齐今天的营养</button><button type="button">推荐减脂轻食晚餐</button><button type="button">安排三天家常轻食</button></div><form class="ai-compose"><input type="text" aria-label="向 AI 营养助手提问" placeholder="说说目标、忌口或现有食材"><button type="submit" aria-label="发送"><i data-lucide="send"></i></button></form></section>`);
   const panel=document.querySelector('.ai-panel'),fab=document.querySelector('.ai-fab'),messages=panel.querySelector('.ai-messages'),input=panel.querySelector('input'),panelHead=panel.querySelector('.ai-panel-head'),status=panel.querySelector('[data-ai-status]');
   const positionBounds=el=>({maxLeft:Math.max(8,innerWidth-el.offsetWidth-8),maxTop:Math.max(8,innerHeight-el.offsetHeight-(innerWidth<=720?88:8))});
   const restorePosition=(el,key)=>{try{const pos=JSON.parse(localStorage.getItem(key));if(!pos)return;const bounds=positionBounds(el);el.style.left=`${Math.max(8,Math.min(pos.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(pos.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}catch{}};

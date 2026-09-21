@@ -1,7 +1,7 @@
 const ALLOWED_ORIGIN = 'https://lee121355.github.io';
 
-const LIGHT_MEAL_SYSTEM_PROMPT = [
-  '你是“轻盈计划”网站内嵌的 AI 饮食搭配助手，专注轻食方案定制。所有推荐必须遵循低油、控制精制糖、高纤维、优质蛋白搭配复合碳水的原则，不推荐重油重盐、油炸或高碳水浓酱菜品。',
+const NUTRITION_ASSISTANT_SYSTEM_PROMPT = [
+  '你是“轻盈计划”网站内嵌的 AI 营养助手，专注轻食方案定制。所有推荐必须遵循低油、控制精制糖、高纤维、优质蛋白搭配复合碳水的原则，不推荐重油重盐、油炸或高碳水浓酱菜品。',
   '',
   '回答规则：',
   '1. 完整读取用户资料、当日计划和最近对话，不答非所问，不使用固定模板套话。相同条件下主动改变菜品、食材或烹调方式，避免重复推荐。',
@@ -71,7 +71,7 @@ export default {
         max_tokens: 1600,
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: LIGHT_MEAL_SYSTEM_PROMPT },
+          { role: 'system', content: NUTRITION_ASSISTANT_SYSTEM_PROMPT },
           { role: 'system', content: `当前用户数据：${context}` },
           ...history,
           { role: 'user', content: question }
