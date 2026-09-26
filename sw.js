@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qingying-plan-v16';
+const CACHE_NAME = 'qingying-plan-v17';
 const APP_SHELL = [
   './login.html',
   './onboarding.html',
@@ -19,7 +19,7 @@ const APP_SHELL = [
   './app-icon-180.png',
   './app-icon-192.png',
   './app-icon-512.png',
-  './avocado-toast.jpg',
+  './avocado-toast-reference.jpg',
   './app-icon.svg'
 ];
 
