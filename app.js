@@ -574,8 +574,8 @@ if ('serviceWorker' in navigator) {
 function shell(active = 'home') {
   const items = [
     ['home', 'index.html', 'house', '今日概况'],
-    ['meal', 'meal-plan.html', 'utensils', '饮食计划'],
-    ['daily', 'daily-plan.html', 'calendar-check', '日计划'],
+    ['meal', 'meal-plan.html', 'utensils', '餐饮计划'],
+    ['daily', 'daily-plan.html', 'calendar-check', '完整日计划'],
     ['recipes', 'recipes.html', 'book-open', '食谱库']
   ];
   const side = document.querySelector('[data-shell]');
@@ -595,9 +595,6 @@ function initCommon(active = 'home') {
       tools.className = 'top-actions';
       [...topbar.children].slice(1).forEach(child => tools.appendChild(child));
       topbar.appendChild(tools);
-    }
-    if (!tools.querySelector('.profile-mini')) {
-      tools.insertAdjacentHTML('beforeend', '<a class="profile-mini" href="profile.html" title="个人资料"><div><strong data-user-name>' + displayName + '</strong><span>个人资料</span></div><div class="avatar" data-user-avatar>' + displayName.slice(0, 1) + '</div></a>');
     }
   }
   document.addEventListener('error', event => {

@@ -1,7 +1,7 @@
 {
   "name": "轻盈计划",
   "short_name": "轻盈计划",
-  "description": "饮食、饮水与运动塑形管理",
+  "description": "饮食、饮水与完整日计划管理",
   "lang": "zh-CN",
   "start_url": "./login.html",
   "scope": "./",
