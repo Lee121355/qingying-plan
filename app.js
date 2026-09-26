@@ -30,6 +30,7 @@ const FOOD_APP = {
     workoutHistory: [],
     ingredientLogs: {},
     ingredientLogDate: '',
+    mealCheckins: {},
     nutritionHistory: [],
     assistantHistory: [],
     checkin: '',
@@ -37,7 +38,7 @@ const FOOD_APP = {
   },
   recipes: [
     { id:'oat-milk-egg', meal:'早餐', name:'燕麦牛奶鸡蛋早餐', calories:438, grams:390, protein:23, carbs:55, time:12, fit:'通勤早餐、需要稳定饱腹感', tags:['高纤维','易准备'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['即食燕麦 45 g','低脂牛奶 250 ml','鸡蛋 1 个','香蕉 60 g'], steps:['鸡蛋放入冷水锅，水开后转中火煮 8 分钟，捞出浸冷水备用。','燕麦倒入小锅，加入牛奶后用中小火加热，期间持续搅拌防止粘底。','煮约 4 分钟，看到燕麦变软、牛奶略微浓稠时关火。','香蕉切片铺在燕麦上，不额外加糖；需要甜味可用熟香蕉压泥拌入。','鸡蛋去壳对半切开，与燕麦一起食用。牛奶冒小泡即可，不要长时间沸腾。'] },
-    { id:'egg-toast-milk', meal:'早餐', name:'鸡蛋全麦吐司配牛奶', calories:410, grams:360, protein:25, carbs:42, time:10, fit:'学生、上班族的快速早餐', tags:['日常食材','高蛋白'], image:'https://images.unsplash.com/photo-1603046891744-76e6300f82ef?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','鸡蛋 2 个','低脂牛奶 200 ml','番茄 80 g'], steps:['番茄洗净切片，鸡蛋打入碗中，加一汤匙清水搅匀。','不粘锅小火预热，刷约 2 g 食用油，倒入蛋液。','待底部凝固后从边缘向中间推拢，蛋液刚完全凝固时关火，避免炒老。','吐司用烤箱或平底锅烘 2 至 3 分钟，表面微脆即可。','将鸡蛋与番茄夹入吐司，牛奶温热至不烫口，一起食用。'] },
+    { id:'egg-toast-milk', meal:'早餐', name:'鸡蛋全麦吐司配牛奶', calories:410, grams:360, protein:25, carbs:42, time:10, fit:'学生、上班族的快速早餐', tags:['日常食材','高蛋白'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','鸡蛋 2 个','低脂牛奶 200 ml','番茄 80 g'], steps:['番茄洗净切片，鸡蛋打入碗中，加一汤匙清水搅匀。','不粘锅小火预热，刷约 2 g 食用油，倒入蛋液。','待底部凝固后从边缘向中间推拢，蛋液刚完全凝固时关火，避免炒老。','吐司用烤箱或平底锅烘 2 至 3 分钟，表面微脆即可。','将鸡蛋与番茄夹入吐司，牛奶温热至不烫口，一起食用。'] },
     { id:'tomato-egg-noodles', meal:'午餐', name:'番茄鸡蛋面', calories:520, grams:480, protein:24, carbs:72, time:20, fit:'快速午餐、运动后的均衡正餐', tags:['一锅完成','家常'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['鲜面条 120 g','鸡蛋 2 个','番茄 200 g','青菜 100 g','食用油 5 g'], steps:['番茄顶部划十字，用热水烫 30 秒后去皮切块；青菜洗净沥水。','鸡蛋打散。不粘锅中火加 3 g 油，倒入蛋液炒至八成熟，盛出备用。','原锅加剩余油和番茄，中火翻炒 3 至 4 分钟，压出汤汁。','加入 450 ml 热水煮开，放入面条并用筷子拨散，按包装时间煮至无硬芯。','放入青菜和炒蛋再煮 1 分钟，加少量盐与白胡椒调味。','先尝汤再补盐，面条能轻松夹断且中心无白点即可出锅。'] },
     { id:'broccoli-chicken-rice', meal:'午餐', name:'西兰花鸡胸肉米饭', calories:575, grams:500, protein:46, carbs:64, time:28, fit:'减脂期、力量训练日', tags:['高蛋白','少油'], image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80', ingredients:['鸡胸肉 160 g','米饭 150 g','西兰花 180 g','食用油 5 g','生抽 5 ml'], steps:['鸡胸肉横切成约 1 cm 厚片，用生抽、黑胡椒和一汤匙清水抓匀，腌 10 分钟。','西兰花切小朵，在淡盐水中浸泡后冲净；沸水焯 90 秒，捞出沥干。','不粘锅中火预热，刷油后铺入鸡胸肉，保持单层不要堆叠。','第一面煎约 3 分钟，边缘变白后翻面，再煎 2 至 3 分钟。','取最厚一片切开，中心完全变白且仍有汁水即熟；静置 2 分钟后切条。','米饭、西兰花和鸡胸肉分区装盘，可淋少量锅中原汁，不再额外加油。'] },
     { id:'tomato-egg-rice', meal:'午餐', name:'番茄炒蛋配米饭', calories:560, grams:500, protein:24, carbs:70, time:18, fit:'家庭午餐、食欲较差时', tags:['家常','酸甜开胃'], image:'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80', ingredients:['番茄 250 g','鸡蛋 2 个','米饭 150 g','青菜 100 g','食用油 6 g'], steps:['番茄去蒂切成小块；鸡蛋打散，加入一汤匙清水使口感更嫩。','锅中加一半油，中火烧热后倒入蛋液，快速推炒至八成熟后盛出。','原锅放剩余油和番茄，加两汤匙水，中火炒至番茄软化出汁。','倒回鸡蛋，轻轻翻匀 30 秒，用少量盐调味后立即关火。','青菜用沸水焯 1 分钟，捞出沥水。','米饭控制在一小碗，与番茄炒蛋和青菜一起装盘，汤汁浸到米饭即可。'] },
@@ -47,7 +48,7 @@ const FOOD_APP = {
     { id:'pepper-pork-rice', meal:'午餐', name:'青椒肉丝配米饭', calories:590, grams:500, protein:36, carbs:68, time:25, fit:'家庭午餐、均衡正餐', tags:['家常','优质蛋白'], image:'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80', ingredients:['猪里脊 140 g','青椒 150 g','米饭 150 g','食用油 6 g','生抽 6 ml'], steps:['里脊逆纹切细丝，加生抽、一汤匙清水和少量淀粉抓匀，腌 10 分钟。','青椒去籽切丝，锅中不放油先中火煸 1 分钟，盛出备用。','锅内加油，中火烧至温热，放肉丝快速划散。','肉丝表面全部变白后继续翻炒约 1 分钟，倒入青椒。','大火翻炒 30 至 45 秒，尝味后少量补盐，肉丝完全熟透即可关火。','搭配一小碗米饭，盘中再补一份凉拌或焯水蔬菜更均衡。'] },
     { id:'egg-vegetable-fried-rice', meal:'午餐', name:'鸡蛋蔬菜炒饭', calories:535, grams:430, protein:22, carbs:70, time:16, fit:'处理剩饭、快速工作餐', tags:['快手','蔬菜丰富'], image:'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80', ingredients:['米饭 180 g','鸡蛋 2 个','杂蔬 180 g','食用油 5 g','生抽 5 ml'], steps:['冷米饭提前打散；胡萝卜、青豆等杂蔬切成相近大小，较硬的蔬菜先焯 1 分钟。','鸡蛋打散，锅中加一半油，中火炒至七成熟后盛出。','原锅加剩余油，放杂蔬中火翻炒 2 至 3 分钟。','倒入米饭，用锅铲压散后转大火快速翻炒，让米粒均匀受热。','加入鸡蛋和生抽翻匀 1 分钟，米粒松散、锅中无明显水汽时关火。','起锅前尝味，不另外加入火腿肠等高盐加工肉。'] },
     { id:'seaweed-egg-corn', meal:'晚餐', name:'紫菜蛋花汤配玉米', calories:405, grams:540, protein:23, carbs:55, time:18, fit:'清淡晚餐、恢复日', tags:['少油','易消化'], image:'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80', ingredients:['鸡蛋 2 个','紫菜 5 g','玉米 180 g','嫩豆腐 100 g','青菜 80 g'], steps:['玉米洗净切段，冷水入锅，水开后转中火煮 12 至 15 分钟。','另取汤锅加入 450 ml 清水，放豆腐小火煮 3 分钟。','鸡蛋充分打散；汤保持微沸时用筷子沿锅边缓慢淋入蛋液。','等待 10 秒再轻推蛋花，加入撕碎的紫菜和青菜。','再煮 1 分钟，滴少量香油并用少量盐调味。','玉米能被筷子轻松戳入即熟，与汤一起食用，作为本餐主食。'] },
-    { id:'avocado-egg-toast', meal:'早餐', name:'牛油果鸡蛋全麦吐司', calories:420, grams:330, protein:21, carbs:40, time:15, fit:'需要较强饱腹感的早餐', tags:['优质脂肪','高纤维'], image:'https://images.unsplash.com/photo-1603046891744-76e6300f82ef?auto=format&fit=crop&w=900&q=80', ingredients:['全麦吐司 2 片','牛油果 70 g','鸡蛋 1 个','番茄 80 g','低脂牛奶 150 ml'], steps:['鸡蛋放入沸水中煮 8 分钟，捞出浸冷水后去壳切片。','牛油果切开去核，取果肉压成粗泥，挤少量柠檬汁防止氧化。','吐司用烤箱 180°C 烤 3 至 4 分钟，或用干锅小火烘至表面微脆。','把牛油果泥均匀抹在吐司上，铺鸡蛋片和番茄片。','撒黑胡椒即可，不额外加沙拉酱；搭配温牛奶完成一餐。'] }
+    { id:'avocado-egg-toast', meal:'早餐', name:'牛油果鸡蛋全麦吐司', calories:420, grams:330, protein:21, carbs:40, time:15, fit:'需要较强饱腹感的早餐', tags:['优质脂肪','高纤维'], image:'avocado-toast.jpg', ingredients:['全麦吐司 2 片','牛油果 70 g','鸡蛋 1 个','番茄 80 g','低脂牛奶 150 ml'], steps:['鸡蛋放入沸水中煮 8 分钟，捞出浸冷水后去壳切片。','牛油果切开去核，取果肉压成粗泥，挤少量柠檬汁防止氧化。','吐司用烤箱 180°C 烤 3 至 4 分钟，或用干锅小火烘至表面微脆。','把牛油果泥均匀抹在吐司上，铺鸡蛋片和番茄片。','撒黑胡椒即可，不额外加沙拉酱；搭配温牛奶完成一餐。'] }
   ],
   workouts: [
     { id:'bench', name:'杠铃卧推', group:'男生', icon:'weight', minutes:25, met:6.0, focus:'胸部与上肢力量', level:'进阶' },
@@ -196,10 +197,25 @@ const FOOD_APP = {
       sum.calories += food.kcal * ratio; sum.protein += food.protein * ratio; sum.carbs += food.carbs * ratio; sum.fat += food.fat * ratio; sum.fiber += food.fiber * ratio;
       return sum;
     }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
-    const date = this.dateKey(), history = this.read('nutritionHistory').filter(item => item.date !== date);
+    const date = this.dateKey(), checkedIds = this.read('mealCheckins')[date] || [];
+    this.planForDate(date).filter(item => checkedIds.includes(String(item.id))).forEach(item => {
+      totals.calories += Number(item.calories) || 0;
+      totals.protein += Number(item.protein) || 0;
+      totals.carbs += Number(item.carbs) || 0;
+      totals.fat += Number(item.fat) || 0;
+      totals.fiber += Number(item.fiber) || 0;
+    });
+    const history = this.read('nutritionHistory').filter(item => item.date !== date);
     if (Object.values(totals).some(value => value > 0)) history.push({ date, ...Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, Math.round(value * 10) / 10])) });
     history.sort((a, b) => a.date.localeCompare(b.date));
     localStorage.setItem(this.userKey('nutritionHistory'), JSON.stringify(history));
+  },
+  toggleMealCheckin(id, date = this.dateKey()) {
+    const checkins = this.get('mealCheckins'), key = String(id), current = Array.isArray(checkins[date]) ? checkins[date] : [];
+    checkins[date] = current.includes(key) ? current.filter(item => item !== key) : [...current, key];
+    this.set('mealCheckins', checkins);
+    if (date === this.dateKey()) this.syncNutritionHistory(this.get('ingredientLogs'));
+    return checkins[date].includes(key);
   },
   nutritionPeriods(targets = this.targets()) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -299,7 +315,7 @@ const FOOD_APP = {
   openRecipeDatabase() {
     if (!('indexedDB' in window)) return Promise.resolve(null);
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('qingying-recipes', 1);
+      const request = indexedDB.open('qingying-recipes', 2);
       request.onupgradeneeded = () => {
         const db = request.result;
         const store = db.objectStoreNames.contains('recipes') ? request.transaction.objectStore('recipes') : db.createObjectStore('recipes', { keyPath: 'id' });
@@ -557,12 +573,10 @@ if ('serviceWorker' in navigator) {
 
 function shell(active = 'home') {
   const items = [
-    ['home', 'index.html', 'house', '今日概览'],
+    ['home', 'index.html', 'house', '今日概况'],
     ['meal', 'meal-plan.html', 'utensils', '饮食计划'],
-    ['daily', 'daily-plan.html', 'calendar-days', '多日计划'],
-    ['recipes', 'recipes.html', 'book-open', '食谱库'],
-    ['exercise', 'exercise.html', 'dumbbell', '运动塑形'],
-    ['profile', 'profile.html', 'user-round-cog', '个人资料']
+    ['daily', 'daily-plan.html', 'calendar-check', '日计划'],
+    ['recipes', 'recipes.html', 'book-open', '食谱库']
   ];
   const side = document.querySelector('[data-shell]');
   if (!side) return;
@@ -572,12 +586,32 @@ function shell(active = 'home') {
 function initCommon(active = 'home') {
   document.body.dataset.page = active;
   shell(active);
+  const profile = FOOD_APP.get('profile'), displayName = profile.name || '用户';
+  const topbar = document.querySelector('.topbar');
+  if (topbar) {
+    let tools = topbar.querySelector(':scope > .top-actions');
+    if (!tools) {
+      tools = document.createElement('div');
+      tools.className = 'top-actions';
+      [...topbar.children].slice(1).forEach(child => tools.appendChild(child));
+      topbar.appendChild(tools);
+    }
+    if (!tools.querySelector('.profile-mini')) {
+      tools.insertAdjacentHTML('beforeend', '<a class="profile-mini" href="profile.html" title="个人资料"><div><strong data-user-name>' + displayName + '</strong><span>个人资料</span></div><div class="avatar" data-user-avatar>' + displayName.slice(0, 1) + '</div></a>');
+    }
+  }
   document.addEventListener('error', event => {
     if (!(event.target instanceof HTMLImageElement)) return;
-    event.target.classList.add('image-unavailable');
-    event.target.closest('.food-image, .recipe-hero')?.classList.add('image-fallback');
+    const image = event.target;
+    if (image.dataset.fallbackApplied === '1') return;
+    image.dataset.fallbackApplied = '1';
+    image.classList.add('image-unavailable');
+    image.closest('.food-image, .recipe-hero')?.classList.add('image-fallback');
+    image.src = 'app-icon.svg';
   }, true);
-  const profile = FOOD_APP.get('profile'), displayName = profile.name || '用户';
+  document.querySelectorAll('img').forEach(image => {
+    if (image.complete && !image.naturalWidth) image.dispatchEvent(new Event('error'));
+  });
   document.querySelectorAll('[data-user-name]').forEach(el => el.textContent = displayName);
   document.querySelectorAll('[data-user-avatar]').forEach(el => el.textContent = displayName.slice(0, 1));
   if (window.lucide) window.lucide.createIcons();
