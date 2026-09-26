@@ -59,6 +59,7 @@ button:active, .btn:active, .icon-btn:active { transform: translateY(1px) scale(
 .brand strong { font-size: 17px; line-height: 1.15; }
 .brand small { margin-top: 4px; color: rgba(255,255,255,.64); font-size: 10px; letter-spacing: 0; }
 .nav { gap: 4px; }
+.nav a[href="exercise.html"], .nav a[href$="exercise.html"], .nav a:has(svg[data-lucide="dumbbell"]) { display: none !important; }
 .nav a {
   min-height: 48px;
   padding: 0 13px;
