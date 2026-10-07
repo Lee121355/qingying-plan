@@ -520,51 +520,6 @@ const FOOD_APP = {
     const suggestions = selected.map(recipe => ({ id: recipe.id, meal: recipe.meal, name: recipe.name, calories: Math.round(recipe.calories * persons), grams: Math.round(recipe.grams * persons), protein: Math.round(recipe.protein * persons), carbs: Math.round(recipe.carbs * persons), image: recipe.image || 'app-icon.svg' }));
     return { reply, suggestions };
   },
-  async resolveAIEndpoint() {
-    if (this.aiEndpoint !== undefined) return this.aiEndpoint;
-    this.aiEndpoint = window.QINGYING_AI_ENDPOINT || localStorage.getItem('food.aiEndpoint') || '';
-    if (this.aiEndpoint) return this.aiEndpoint;
-    try {
-      const response = await fetch('./ai-config.json', { cache: 'no-store' });
-      if (response.ok) this.aiEndpoint = (await response.json()).endpoint || '';
-    } catch {}
-    return this.aiEndpoint;
-  },
-  async askAssistant(question, history = []) {
-    const endpoint = await this.resolveAIEndpoint();
-    const fallback = () => ({ ...this.lightMealAssistantResponse(question, history), source: 'local', model: 'AI 营养助手 · 本地规则' });
-    if (!endpoint) return fallback();
-    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, messages: history.slice(-10), profile: this.get('profile'), targets: this.targets(), plan: this.planForDate() }),
-        signal: controller.signal
-      });
-      if (!response.ok) throw new Error(`AI 服务返回 ${response.status}`);
-      const data = await response.json();
-      const reply = data.reply || data.choices?.[0]?.message?.content;
-      if (!reply) throw new Error('AI 服务未返回内容');
-      const suggestions = Array.isArray(data.suggestions) ? data.suggestions.slice(0, 3).map((item, index) => ({
-        id: item.id || `ai-${Date.now()}-${index}`,
-        meal: ['早餐', '上午加餐', '午餐', '下午加餐', '晚餐', '加餐'].includes(item.meal) ? item.meal : '加餐',
-        name: String(item.name || 'AI 推荐餐饮').slice(0, 30),
-        calories: Math.max(0, Math.round(Number(item.calories) || 0)),
-        grams: Math.max(0, Math.round(Number(item.grams) || 0)),
-        protein: Math.max(0, Math.round((Number(item.protein) || 0) * 10) / 10),
-        carbs: Math.max(0, Math.round((Number(item.carbs) || 0) * 10) / 10),
-        image: 'app-icon.svg'
-      })) : [];
-      return { reply, suggestions, source: 'deepseek', model: data.model || 'DeepSeek V4.1 Flash' };
-    } catch {
-      const result = fallback();
-      result.reply += ' 当前 DeepSeek 服务暂不可用，已切换为本地营养建议。';
-      return result;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
 };
 
 if ('serviceWorker' in navigator) {
@@ -614,48 +569,7 @@ function initCommon(active = 'home') {
   if (window.lucide) window.lucide.createIcons();
   document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => btn.closest('.modal-backdrop').classList.remove('open')));
   document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('open'); }));
-  initAssistant();
-}
-
-function initAssistant() {
-  if (document.querySelector('.ai-fab')) return;
-  document.body.insertAdjacentHTML('beforeend', `<button class="ai-fab" type="button" title="AI 营养助手" aria-label="打开 AI 营养助手"><i data-lucide="sparkles"></i></button><section class="ai-panel" aria-label="AI 营养助手"><header class="ai-panel-head"><div><strong>AI 营养助手</strong><span data-ai-status>个性化轻食 · 支持多轮对话</span></div><div class="ai-head-actions"><button class="icon-btn" type="button" data-ai-clear title="清空对话"><i data-lucide="trash-2"></i></button><button class="icon-btn" type="button" data-ai-close title="关闭"><i data-lucide="x"></i></button></div></header><div class="ai-messages"></div><div class="ai-quick" aria-label="快捷提问"><button type="button">补齐今天的营养</button><button type="button">推荐减脂轻食晚餐</button><button type="button">安排三天家常轻食</button></div><form class="ai-compose"><input type="text" aria-label="向 AI 营养助手提问" placeholder="说说目标、忌口或现有食材"><button type="submit" aria-label="发送"><i data-lucide="send"></i></button></form></section>`);
-  const panel=document.querySelector('.ai-panel'),fab=document.querySelector('.ai-fab'),messages=panel.querySelector('.ai-messages'),input=panel.querySelector('input'),panelHead=panel.querySelector('.ai-panel-head'),status=panel.querySelector('[data-ai-status]');
-  const positionBounds=el=>({maxLeft:Math.max(8,innerWidth-el.offsetWidth-8),maxTop:Math.max(8,innerHeight-el.offsetHeight-(innerWidth<=720?88:8))});
-  const restorePosition=(el,key)=>{try{const pos=JSON.parse(localStorage.getItem(key));if(!pos)return;const bounds=positionBounds(el);el.style.left=`${Math.max(8,Math.min(pos.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(pos.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}catch{}};
-  restorePosition(fab,'food.aiFabPosition');
-  const makeDraggable=(el,handle,key)=>{let startX=0,startY=0,startLeft=0,startTop=0,moved=false;handle.addEventListener('pointerdown',event=>{const interactive=event.target.closest('button,input');if(interactive&&interactive!==handle)return;const rect=el.getBoundingClientRect();startX=event.clientX;startY=event.clientY;startLeft=rect.left;startTop=rect.top;moved=false;el.classList.add('dragging');handle.setPointerCapture(event.pointerId)});handle.addEventListener('pointermove',event=>{if(!handle.hasPointerCapture(event.pointerId))return;const dx=event.clientX-startX,dy=event.clientY-startY,bounds=positionBounds(el);if(Math.abs(dx)+Math.abs(dy)>5)moved=true;const left=Math.max(8,Math.min(bounds.maxLeft,startLeft+dx)),top=Math.max(8,Math.min(bounds.maxTop,startTop+dy));el.style.left=`${left}px`;el.style.top=`${top}px`;el.style.right='auto';el.style.bottom='auto';event.preventDefault()});handle.addEventListener('pointerup',event=>{if(!handle.hasPointerCapture(event.pointerId))return;handle.releasePointerCapture(event.pointerId);el.classList.remove('dragging');const rect=el.getBoundingClientRect();localStorage.setItem(key,JSON.stringify({left:rect.left,top:rect.top}));if(el===fab&&moved){fab.dataset.justDragged='1';setTimeout(()=>delete fab.dataset.justDragged,80)}})};
-  makeDraggable(fab,fab,'food.aiFabPosition');
-  makeDraggable(panel,panelHead,'food.aiPanelPosition');
-  let history=FOOD_APP.get('assistantHistory');
-  if(!Array.isArray(history))history=[];
-  const persistHistory=()=>{history=history.slice(-20);FOOD_APP.set('assistantHistory',history)};
-  const addSuggestionActions=(container,item)=>{
-    const actions=document.createElement('div');actions.className='ai-suggestion-actions';
-    const todayButton=document.createElement('button');todayButton.type='button';todayButton.className='btn btn-outline';todayButton.textContent='加入今天';
-    const weekButton=document.createElement('button');weekButton.type='button';weekButton.className='btn btn-secondary';weekButton.textContent='加入本周';
-    todayButton.onclick=()=>{FOOD_APP.addToPlan(item,{date:FOOD_APP.dateKey()});todayButton.disabled=true;todayButton.textContent='今天已添加'};
-    weekButton.onclick=()=>{FOOD_APP.addToPlan(item);weekButton.disabled=true;weekButton.textContent='本周已添加'};
-    actions.append(todayButton,weekButton);container.appendChild(actions);
-  };
-  const appendMessage=entry=>{
-    if(entry.role==='user'){const bubble=document.createElement('div');bubble.className='ai-message user';bubble.textContent=entry.content;messages.appendChild(bubble);return}
-    const response=document.createElement('div');response.className='ai-response';
-    const bubble=document.createElement('div');bubble.className='ai-message assistant';bubble.textContent=entry.content;response.appendChild(bubble);
-    if(entry.model){const model=document.createElement('small');model.className='ai-model';model.textContent=entry.model;response.appendChild(model)}
-    (entry.suggestions||[]).forEach(item=>{const card=document.createElement('article');card.className='ai-suggestion';const title=document.createElement('strong');title.textContent=item.meal+' · '+item.name;const meta=document.createElement('span');meta.textContent=item.calories+' kcal · '+(item.grams||'--')+' g · 蛋白 '+(item.protein||0)+' g · 碳水 '+(item.carbs||0)+' g';card.append(title,meta);addSuggestionActions(card,item);response.appendChild(card)});
-    messages.appendChild(response);
-  };
-  const renderConversation=()=>{messages.innerHTML='';if(!history.length)appendMessage({role:'assistant',content:'告诉我你的目标、忌口、现有食材或预算。我会记住本轮条件，给出低油、控糖、高纤维的轻食建议；推荐餐食可直接加入计划。'});else history.forEach(appendMessage);messages.scrollTop=messages.scrollHeight};
-  renderConversation();
-  const open=()=>{panel.classList.add('open');input.focus()};
-  fab.onclick=()=>{if(fab.dataset.justDragged)return;if(panel.classList.contains('open'))panel.classList.remove('open');else{panel.classList.add('open');restorePosition(panel,'food.aiPanelPosition');input.focus()}};panel.querySelector('[data-ai-close]').onclick=()=>panel.classList.remove('open');
-  panel.querySelector('[data-ai-clear]').onclick=()=>{history=[];persistHistory();status.textContent='个性化轻食 · 支持多轮对话';renderConversation();input.focus()};
-  document.querySelectorAll('[data-ai-open]').forEach(button=>button.addEventListener('click',open));
-  panel.querySelectorAll('.ai-quick button').forEach(button=>button.onclick=()=>{input.value=button.textContent;panel.querySelector('form').requestSubmit()});
-  panel.querySelector('form').onsubmit=async e=>{e.preventDefault();const question=input.value.trim();if(!question)return;const context=history.map(({role,content})=>({role,content}));const userEntry={role:'user',content:question};history.push(userEntry);appendMessage(userEntry);persistHistory();input.value='';input.disabled=true;const submit=panel.querySelector('form button');submit.disabled=true;const loading=document.createElement('div');loading.className='ai-message assistant ai-loading';loading.textContent='正在结合你的资料和饮食计划分析…';messages.appendChild(loading);messages.scrollTop=messages.scrollHeight;const result=await FOOD_APP.askAssistant(question,context);loading.remove();const assistantEntry={role:'assistant',content:result.reply,model:result.model,suggestions:result.suggestions||[]};history.push(assistantEntry);persistHistory();appendMessage(assistantEntry);status.textContent=result.model;input.disabled=false;submit.disabled=false;input.focus();messages.scrollTop=messages.scrollHeight};
-  if(window.lucide)window.lucide.createIcons();
-  window.addEventListener('resize',()=>{[fab,panel].forEach(el=>{const rect=el.getBoundingClientRect(),bounds=positionBounds(el);if(rect.right>innerWidth||rect.bottom>innerHeight-(innerWidth<=720?80:0)){el.style.left=`${Math.max(8,Math.min(rect.left,bounds.maxLeft))}px`;el.style.top=`${Math.max(8,Math.min(rect.top,bounds.maxTop))}px`;el.style.right='auto';el.style.bottom='auto'}})});
+  loadAssistant();
 }
 
 function showDailyReminder() {
@@ -670,4 +584,18 @@ function showDailyReminder() {
     modal.querySelector('[data-reminder-text]').textContent = `今日计划 ${plan.length} 餐，约 ${total} kcal。午餐后记得散步 10 分钟，当前饮水目标还差 ${Math.max(0, FOOD_APP.get('water').target - FOOD_APP.get('water').total)} ml。`;
     modal.classList.add('open');
   }, 450);
+}
+function loadAssistant() {
+  if (window.QingyingAssistant) { window.QingyingAssistant.init(); return; }
+  if (document.querySelector('script[data-qy-ai-loader]')) return;
+  const config = document.createElement('script');
+  config.src = 'ai-config.js';
+  config.onload = () => {
+    const assistant = document.createElement('script');
+    assistant.src = 'ai-assistant.js';
+    assistant.dataset.qyAiLoader = '1';
+    assistant.onload = () => window.QingyingAssistant?.init();
+    document.head.appendChild(assistant);
+  };
+  document.head.appendChild(config);
 }

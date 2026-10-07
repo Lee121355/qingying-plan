@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qingying-plan-v19';
+const CACHE_NAME = 'qingying-plan-v20';
 const APP_SHELL = [
   './login.html',
   './onboarding.html',
@@ -13,6 +13,9 @@ const APP_SHELL = [
   './redesign.css',
   './login-redesign.css',
   './app.js',
+  './ai-config.js',
+  './ai-assistant.css',
+  './ai-assistant.js',
   './auth.js',
   './manifest.webmanifest',
   './app-icon-180.png',
@@ -32,7 +35,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
-  if (new URL(event.request.url).pathname.endsWith('/ai-config.json')) {
+  if (new URL(event.request.url).pathname.endsWith('/ai-config.js')) {
     event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }

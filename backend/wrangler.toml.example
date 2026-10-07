@@ -1,9 +1,0 @@
-name = "qingying-deepseek-proxy"
-main = "deepseek-worker.js"
-compatibility_date = "2026-09-01"
-
-[vars]
-DEEPSEEK_MODEL = "deepseek-flash"
-
-[observability]
-enabled = true
