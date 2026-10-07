@@ -149,7 +149,17 @@ function extractReply(result) {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '';
-
+    const pathname = new URL(request.url).pathname;
+    // 根路径健康检查
+    if (request.method === 'GET' && pathname === '/') {
+  return new Response(JSON.stringify({
+    status: 'ok',
+    message: 'Worker is running. Use POST /api/chat',
+  }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
     if (!isAllowedOrigin(origin, env)) {
       return jsonResponse({ error: 'Origin not allowed' }, 403, origin, env);
     }
@@ -158,7 +168,6 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin, env) });
     }
 
-    const pathname = new URL(request.url).pathname;
     if (pathname !== '/api/chat') {
       return jsonResponse({ error: 'Not found' }, 404, origin, env);
     }

@@ -1,4 +1,4 @@
-name = "qingying-plan-ai"
+name = "fragrant-pond-7503"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
@@ -12,7 +12,7 @@ FALLBACK_MODEL = "@cf/mistral/mistral-7b-instruct-v0.1"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "cac25397887b40f2aa79a57d360efd78"
 
 [observability]
 enabled = true
