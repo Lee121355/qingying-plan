@@ -31,6 +31,7 @@ const FOOD_APP = {
     ingredientLogs: {},
     ingredientLogDate: '',
     mealCheckins: {},
+    aiMeals: {},
     nutritionHistory: [],
     assistantHistory: [],
     checkin: '',

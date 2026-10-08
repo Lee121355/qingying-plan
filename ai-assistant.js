@@ -464,7 +464,7 @@
     history.forEach((entry, index) => {
       if (entry.role === 'user') lastUserQuestion = entry.content;
       const rendered = addMessageElement(entry);
-      if (entry.role === 'assistant') appendSuggestions(rendered.row, extractSuggestions(entry.content));
+      if (entry.role === 'assistant') { appendSuggestions(rendered.row, extractSuggestions(entry.content)); appendMealPlanButton(rendered.row, entry.content); }
       if (entry.role === 'assistant' && index === history.length - 1 && entry.model) {
         appendModelLabel(rendered.row, entry.model);
       }
@@ -703,6 +703,158 @@
     row.appendChild(list);
   }
 
+  function detectMealRecommendation(markdown) {
+    const source = stripSuggestionBlock(String(markdown || ''));
+    const keywords = /早餐|午餐|晚餐|加餐|食谱|热量|千卡|卡路里|推荐|克|g\b/i;
+    const listItems = source.split(/\r?\n/).filter(line => /^\s*(?:[-*+]|\d+[.、])\s+/.test(line));
+    const quantity = /(?:约\s*)?\d+(?:\.\d+)?\s*(?:kcal|千卡|大卡|卡路里|克|g)\b/i.test(source);
+    return keywords.test(source) || listItems.length > 0 || quantity;
+  }
+
+  function mealKeyFromLabel(label) {
+    return ({ '早餐': 'breakfast', '午餐': 'lunch', '晚餐': 'dinner', '加餐': 'snack' })[label] || 'snack';
+  }
+
+  function stripMarkdownLine(line) {
+    return String(line || '')
+      .replace(/^\s*(?:[-*+]|\d+[.、])\s*/, '')
+      .replace(/[*_`>#]/g, '')
+      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+      .trim();
+  }
+
+  function extractCalories(text) {
+    const match = String(text || '').match(/(?:约\s*)?(\d+(?:\.\d+)?)\s*(?:kcal|千卡|大卡|卡路里)/i);
+    return match ? Math.round(Number(match[1])) : null;
+  }
+
+  function extractMealItems(markdown) {
+    const source = stripSuggestionBlock(String(markdown || ''));
+    const ignored = /注意|建议|提示|说明|小贴士|步骤|做法|总结|营养|原理|目标|热量|搭配|替换|原则|免责|医生|分量|教程/;
+    const foods = [];
+    const seen = new Set();
+    const addFood = (name, calories) => {
+      const clean = String(name || '').replace(/[：:；;，,。.!！？?]+$/g, '').trim().slice(0, 40);
+      if (!clean || ignored.test(clean) || seen.has(clean)) return;
+      seen.add(clean);
+      foods.push({ name: clean, calories, note: '来自 AI 推荐' });
+    };
+    source.split(/\r?\n/).forEach(line => {
+      const trimmed = line.trim();
+      if (!/^\s*(?:[-*+]|\d+[.、])\s+/.test(trimmed)) return;
+      const content = stripMarkdownLine(trimmed);
+      if (!content || ignored.test(content)) return;
+      const calories = extractCalories(content);
+      const parts = content.split(/[｜|：:，,；;]/).map(part => part.trim()).filter(Boolean);
+      const name = parts[0].replace(/\s*(?:约\s*)?\d+(?:\.\d+)?\s*(?:kcal|千卡|大卡|卡路里|克|g)\b.*$/i, '').trim();
+      addFood(name || parts[0], calories);
+    });
+    if (!foods.length) {
+      const summary = source.split(/\r?\n/).map(line => stripMarkdownLine(line)).filter(Boolean).join(' ').slice(0, 40);
+      addFood('AI 餐饮推荐', extractCalories(source));
+      if (summary) foods[0].note = `来自 AI 推荐：${summary}`;
+    }
+    return foods.slice(0, 8);
+  }
+
+  function appendMealPlanButton(row, markdown) {
+    if (!window.FOOD_APP || !detectMealRecommendation(markdown)) return;
+    const items = extractMealItems(markdown);
+    if (!items.length) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ai-add-meal-button';
+    button.textContent = '添加到餐饮计划';
+    button.onclick = () => openMealPlanDialog(items, button);
+    row.appendChild(button);
+  }
+
+  function openMealPlanDialog(items, button) {
+    closeMealPlanDialog();
+    const today = window.FOOD_APP.dateKey();
+    const tomorrowDate = new Date(`${today}T00:00:00`);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="ai-meal-dialog-backdrop" data-ai-meal-dialog>
+        <section class="ai-meal-dialog" role="dialog" aria-modal="true" aria-label="添加到餐饮计划">
+          <header><strong>添加到餐饮计划</strong><button type="button" data-ai-meal-close title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></header>
+          <p>将 ${items.length} 项 AI 推荐保存到餐饮打卡：${escapeHtml(items.map(item => item.name).join('、'))}</p>
+          <label>日期
+            <select data-ai-meal-date>
+              <option value="${today}">今天（${today}）</option>
+              <option value="${window.FOOD_APP.dateKey(tomorrowDate)}">明天（${window.FOOD_APP.dateKey(tomorrowDate)}）</option>
+              <option value="custom">自定义日期</option>
+            </select>
+          </label>
+          <label data-ai-custom-date-wrap hidden>自定义日期
+            <input type="date" data-ai-meal-custom-date value="${today}">
+          </label>
+          <label>餐次
+            <select data-ai-meal-type>
+              <option value="早餐">早餐</option>
+              <option value="午餐">午餐</option>
+              <option value="晚餐">晚餐</option>
+              <option value="加餐">加餐</option>
+            </select>
+          </label>
+          <div class="ai-meal-dialog-actions">
+            <button type="button" class="ai-meal-cancel" data-ai-meal-close>取消</button>
+            <button type="button" class="ai-meal-confirm" data-ai-meal-confirm>确认添加</button>
+          </div>
+        </section>
+      </div>
+    `);
+    const dialog = document.querySelector('[data-ai-meal-dialog]');
+    const dateSelect = dialog.querySelector('[data-ai-meal-date]');
+    const customWrap = dialog.querySelector('[data-ai-custom-date-wrap]');
+    const customDate = dialog.querySelector('[data-ai-meal-custom-date]');
+    const mealSelect = dialog.querySelector('[data-ai-meal-type]');
+    dateSelect.onchange = () => { customWrap.hidden = dateSelect.value !== 'custom'; };
+    dialog.querySelectorAll('[data-ai-meal-close]').forEach(close => close.onclick = closeMealPlanDialog);
+    dialog.addEventListener('click', event => { if (event.target === dialog) closeMealPlanDialog(); });
+    dialog.querySelector('[data-ai-meal-confirm]').onclick = () => {
+      const date = dateSelect.value === 'custom' ? customDate.value : dateSelect.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { window.FOOD_APP.toast('请选择有效日期'); return; }
+      const mealLabel = mealSelect.value;
+      const saved = window.FOOD_APP.get('aiMeals') || {};
+      const day = saved[date] || { breakfast: [], lunch: [], dinner: [], snack: [] };
+      const key = mealKeyFromLabel(mealLabel);
+      day[key] = Array.isArray(day[key]) ? day[key] : [];
+      let added = 0;
+      items.forEach(item => {
+        if (day[key].some(entry => entry.name === item.name)) return;
+        day[key].push(item);
+        added += 1;
+      });
+      saved[date] = day;
+      window.FOOD_APP.set('aiMeals', saved);
+      window.FOOD_APP.toast(`已添加到 ${date} ${mealLabel}`);
+      appendMealPlanSystemMessage(`已添加到 ${date} ${mealLabel} ✅`);
+      button.disabled = true;
+      button.textContent = '已添加到餐饮计划';
+      closeMealPlanDialog();
+      if (!added) window.FOOD_APP.toast('该餐次已存在相同推荐');
+    };
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function closeMealPlanDialog() {
+    document.querySelector('[data-ai-meal-dialog]')?.remove();
+  }
+
+  function appendMealPlanSystemMessage(content) {
+    const row = document.createElement('div');
+    row.className = 'ai-message-row system';
+    const bubble = document.createElement('div');
+    bubble.className = 'ai-bubble';
+    bubble.textContent = content;
+    row.appendChild(bubble);
+    elements.messages.appendChild(row);
+    history.push({ role: 'assistant', content, model: '餐饮计划' });
+    saveHistory();
+    scrollToBottom(true);
+  }
+
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, char => ({
       '&': '&amp;',
@@ -849,6 +1001,7 @@
       if (assistantText) {
         renderMarkdown(assistantRow.bubble, stripSuggestionBlock(assistantText));
         appendSuggestions(assistantRow.row, extractSuggestions(assistantText));
+        appendMealPlanButton(assistantRow.row, assistantText);
         history.push({ role: 'assistant', content: assistantText, model: elements.model.value });
         saveHistory();
         completed = true;
