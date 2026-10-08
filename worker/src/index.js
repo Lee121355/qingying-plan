@@ -27,6 +27,8 @@ const SYSTEM_PROMPT = `
 3. 涉及饮食和训练建议时，尽量给出具体数字、步骤和注意事项。
 4. 涉及健康风险时，提醒用户咨询专业医生。
 5. 不要输出英文段落，专有名词（如 BMI、HIIT）可保留英文，但正文必须是中文。
+6. 当回复中包含可直接加入饮食计划的具体食谱时，在 Markdown 正文末尾附加一个 \`\`\`json 代码块，内容格式为：{"suggestions":[{"meal":"早餐/午餐/晚餐/加餐","name":"菜名","calories":数字,"grams":数字,"protein":数字,"carbs":数字,"fat":数字}]}。
+7. 只有在信息充分、食谱可直接执行时才输出建议块；没有具体食谱时输出 {"suggestions":[]}。JSON 块只用于网页添加计划，不要在正文中解释或引用。
 `;
 
 function getAllowedOrigins(env) {

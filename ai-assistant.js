@@ -53,6 +53,7 @@
   let activeController = null;
   let timedOut = false;
   let manuallyStopped = false;
+  let lastUserQuestion = '';
 
   const assetsPromise = Promise.all([
     loadExternalStyle(CDN_LIBS.highlightTheme, 'highlight-theme'),
@@ -442,7 +443,7 @@
     const bubble = document.createElement('div');
     bubble.className = 'ai-bubble';
     if (entry.role === 'user') bubble.textContent = entry.content;
-    else renderMarkdown(bubble, entry.content);
+    else renderMarkdown(bubble, stripSuggestionBlock(entry.content));
     row.appendChild(bubble);
     elements.messages.appendChild(row);
     return { row, bubble };
@@ -461,7 +462,9 @@
     }
     hideRecommendations();
     history.forEach((entry, index) => {
+      if (entry.role === 'user') lastUserQuestion = entry.content;
       const rendered = addMessageElement(entry);
+      if (entry.role === 'assistant') appendSuggestions(rendered.row, extractSuggestions(entry.content));
       if (entry.role === 'assistant' && index === history.length - 1 && entry.model) {
         appendModelLabel(rendered.row, entry.model);
       }
@@ -534,19 +537,108 @@
     if (force || distance < 120) elements.messages.scrollTop = elements.messages.scrollHeight;
   }
 
-  function extractSuggestions(markdown) {
-    const recipes = window.FOOD_APP?.recipes || [];
+  function getServingMultiplier() {
+    const match = String(lastUserQuestion || '').match(/(\d+)\s*(?:人份|人)/);
+    const value = match ? Number(match[1]) : 1;
+    return Number.isFinite(value) && value >= 1 && value <= 8 ? value : 1;
+  }
+
+  function normalizeMeal(value) {
+    const allowed = ['早餐', '上午加餐', '午餐', '下午加餐', '晚餐', '加餐'];
+    return allowed.includes(value) ? value : '加餐';
+  }
+
+  function suggestionId(name) {
+    let hash = 0;
+    const source = String(name || 'ai-food');
+    for (let index = 0; index < source.length; index += 1) {
+      hash = ((hash << 5) - hash + source.charCodeAt(index)) | 0;
+    }
+    return `ai-${Math.abs(hash)}`;
+  }
+
+  function parseStructuredSuggestions(markdown) {
     const source = String(markdown || '');
-    return recipes.filter(recipe => source.includes(recipe.name)).slice(0, 3).map(recipe => ({
-      id: recipe.id,
-      meal: recipe.meal,
-      name: recipe.name,
-      calories: recipe.calories,
-      grams: recipe.grams,
-      protein: recipe.protein,
-      carbs: recipe.carbs,
-      image: recipe.image
-    }));
+    const fenced = source.match(/```(?:json)?\s*(\{[\s\S]*?"suggestions"[\s\S]*?\})\s*```/i);
+    let payload = null;
+    if (fenced) {
+      try { payload = JSON.parse(fenced[1]); } catch {}
+    }
+    if (!payload) {
+      const raw = source.match(/\{[\s\S]*?"suggestions"[\s\S]*?\}/);
+      if (raw) {
+        try { payload = JSON.parse(raw[0]); } catch {}
+      }
+    }
+    if (!payload || !Array.isArray(payload.suggestions)) return [];
+    return payload.suggestions.slice(0, 5).map(item => {
+      const name = String(item?.name || '').trim().slice(0, 40);
+      if (!name) return null;
+      return {
+        id: suggestionId(name),
+        meal: normalizeMeal(String(item?.meal || '').trim()),
+        name,
+        calories: Math.max(0, Math.round(Number(item?.calories) || 0)),
+        grams: Math.max(0, Math.round(Number(item?.grams) || 0)),
+        protein: Math.max(0, Math.round((Number(item?.protein) || 0) * 10) / 10),
+        carbs: Math.max(0, Math.round((Number(item?.carbs) || 0) * 10) / 10),
+        fat: Math.max(0, Math.round((Number(item?.fat) || 0) * 10) / 10),
+        image: 'app-icon.svg'
+      };
+    }).filter(Boolean);
+  }
+
+  function stripSuggestionBlock(markdown) {
+    const source = String(markdown || '');
+    const fenced = source.match(/```(?:json)?\s*\{[\s\S]*?"suggestions"[\s\S]*?\}\s*```/i);
+    if (fenced) return source.replace(fenced[0], '').trim();
+    const raw = source.match(/\{[\s\S]*?"suggestions"[\s\S]*?\}/);
+    return raw ? source.replace(raw[0], '').trim() : source;
+  }
+
+  function scaleSuggestion(item, multiplier) {
+    const scale = value => Math.round((Number(value) || 0) * multiplier * 10) / 10;
+    return {
+      ...item,
+      calories: Math.round(scale(item.calories)),
+      grams: Math.round(scale(item.grams)),
+      protein: scale(item.protein),
+      carbs: scale(item.carbs),
+      fat: scale(item.fat || 0),
+      servings: multiplier
+    };
+  }
+
+  function extractSuggestions(markdown) {
+    const source = String(markdown || '');
+    const multiplier = getServingMultiplier();
+    const structured = parseStructuredSuggestions(source).map(item => scaleSuggestion(item, multiplier));
+    const known = (window.FOOD_APP?.recipes || [])
+      .filter(recipe => source.includes(recipe.name))
+      .map(recipe => scaleSuggestion({
+        id: recipe.id,
+        meal: normalizeMeal(recipe.meal),
+        name: recipe.name,
+        calories: recipe.calories,
+        grams: recipe.grams,
+        protein: recipe.protein,
+        carbs: recipe.carbs,
+        fat: recipe.fat || 0,
+        image: recipe.image || 'app-icon.svg'
+      }, multiplier));
+    const seen = new Set();
+    return [...structured, ...known].filter(item => {
+      const key = item.name.trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 5);
+  }
+
+  function planIncludes(item, scope) {
+    const plan = window.FOOD_APP?.get('plan') || [];
+    const dates = scope === 'today' ? [window.FOOD_APP.dateKey()] : window.FOOD_APP.weekDates();
+    return plan.some(entry => String(entry.id) === String(item.id) && dates.some(date => (entry.planDates || []).includes(date)));
   }
 
   function appendSuggestions(row, suggestions) {
@@ -556,30 +648,57 @@
     suggestions.forEach(item => {
       const card = document.createElement('div');
       card.className = 'ai-suggestion';
-      card.innerHTML = `<strong>${escapeHtml(item.meal)} · ${escapeHtml(item.name)}</strong><span>${item.calories} kcal · 蛋白 ${item.protein} g · 碳水 ${item.carbs} g</span>`;
+      card.innerHTML = `<strong>${escapeHtml(item.name)}</strong><span>${item.calories} kcal · ${item.grams} g · 蛋白 ${item.protein} g · 碳水 ${item.carbs} g${item.servings > 1 ? ` · ${item.servings} 人份` : ''}</span>`;
+      const mealLabel = document.createElement('label');
+      mealLabel.className = 'ai-suggestion-meal';
+      mealLabel.innerHTML = '<span>餐次</span>';
+      const select = document.createElement('select');
+      ['早餐', '上午加餐', '午餐', '下午加餐', '晚餐', '加餐'].forEach(meal => {
+        const option = document.createElement('option');
+        option.value = meal;
+        option.textContent = meal;
+        option.selected = normalizeMeal(item.meal) === meal;
+        select.appendChild(option);
+      });
+      mealLabel.appendChild(select);
+      card.appendChild(mealLabel);
       const actions = document.createElement('div');
       actions.className = 'ai-suggestion-actions';
       const today = document.createElement('button');
       today.type = 'button';
       today.className = 'primary';
       today.textContent = '加入今天';
-      today.onclick = () => {
-        window.FOOD_APP.addToPlan(item, { date: window.FOOD_APP.dateKey() });
-        today.disabled = true;
-        today.textContent = '已加入';
-      };
       const week = document.createElement('button');
       week.type = 'button';
       week.className = 'secondary';
       week.textContent = '加入本周';
+      const refresh = () => {
+        const todayDone = planIncludes(item, 'today');
+        const weekDone = planIncludes(item, 'week');
+        today.disabled = todayDone;
+        week.disabled = weekDone;
+        today.textContent = todayDone ? '今天已加入' : '加入今天';
+        week.textContent = weekDone ? '本周已加入' : '加入本周';
+        card.classList.toggle('is-added', todayDone || weekDone);
+      };
+      today.onclick = () => {
+        const value = { ...item, meal: select.value };
+        if (planIncludes(value, 'today')) return;
+        window.FOOD_APP.addToPlan(value, { date: window.FOOD_APP.dateKey() });
+        window.FOOD_APP.toast(`${value.name}已加入今天`);
+        refresh();
+      };
       week.onclick = () => {
-        window.FOOD_APP.addToPlan(item);
-        week.disabled = true;
-        week.textContent = '已加入';
+        const value = { ...item, meal: select.value };
+        if (planIncludes(value, 'week')) return;
+        window.FOOD_APP.addToPlan(value);
+        window.FOOD_APP.toast(`${value.name}已加入本周`);
+        refresh();
       };
       actions.append(today, week);
       card.appendChild(actions);
       list.appendChild(card);
+      refresh();
     });
     row.appendChild(list);
   }
@@ -647,6 +766,7 @@
   async function sendQuestion() {
     if (!elements || elements.panel.classList.contains('is-generating')) return;
     const question = elements.input.value.trim();
+    lastUserQuestion = question;
     if (!question) return;
     if (question.length > MAX_MESSAGE_LENGTH) {
       setStatus(`单条消息不能超过 ${MAX_MESSAGE_LENGTH} 字符`, true);
@@ -727,7 +847,7 @@
 
       assistantText = assistantText.trim();
       if (assistantText) {
-        renderMarkdown(assistantRow.bubble, assistantText);
+        renderMarkdown(assistantRow.bubble, stripSuggestionBlock(assistantText));
         appendSuggestions(assistantRow.row, extractSuggestions(assistantText));
         history.push({ role: 'assistant', content: assistantText, model: elements.model.value });
         saveHistory();

@@ -213,8 +213,29 @@
 .ai-suggestion strong, .ai-suggestion span { display: block; }
 .ai-suggestion strong { font-size: 11px; }
 .ai-suggestion span { margin-top: 3px; color: var(--ai-muted); font-size: 9px; }
-.ai-suggestion-actions { margin-top: 8px; display: flex; gap: 5px; }
-.ai-suggestion-actions button { min-height: 27px; padding: 0 9px; border: 0; border-radius: 4px; font-size: 9px; }
+.ai-suggestion-actions { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.ai-suggestion-meal {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ai-suggestion-meal > span {
+  color: var(--ai-muted);
+  font-size: 9px;
+}
+.ai-suggestion-meal select {
+  min-width: 0;
+  height: 36px;
+  flex: 1;
+  padding: 0 8px;
+  border: 1px solid var(--ai-line);
+  border-radius: 5px;
+  background: #fff;
+  font-size: 10px;
+}
+.ai-suggestion.is-added { border-color: #8db29b; background: #eaf4ed; }
+.ai-suggestion-actions button { min-height: 40px; flex: 1; padding: 0 12px; border: 0; border-radius: 4px; font-size: 9px; }
 .ai-suggestion-actions .primary { color: #fff; background: var(--ai-green); }
 .ai-suggestion-actions .secondary { color: var(--ai-green-deep); background: #dcebe2; }
 .ai-chat-status {
