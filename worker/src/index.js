@@ -4,8 +4,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://127.0.0.1'
 ];
 const LOCAL_ORIGIN_PATTERN = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
-const PRIMARY_MODEL = '@cf/meta/llama-3.1-8b-instruct';
-const FALLBACK_MODEL = '@cf/mistral/mistral-7b-instruct-v0.1';
+const PRIMARY_MODEL = 'deepseek-flash';
+const FALLBACK_MODEL = 'deepseek-chat';
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_TIMEOUT_MS = 60000;
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_OUTPUT_TOKENS = 1024;
@@ -128,20 +130,66 @@ async function isRateLimited(env, request) {
 
 function selectModel(requestedModel, env) {
   const requested = String(requestedModel || '').trim();
-  const primary = String(env.DEFAULT_MODEL || PRIMARY_MODEL).trim() || PRIMARY_MODEL;
-  const fallback = String(env.FALLBACK_MODEL || FALLBACK_MODEL).trim() || FALLBACK_MODEL;
+  const primary = String(env.DEEPSEEK_MODEL || PRIMARY_MODEL).trim() || PRIMARY_MODEL;
+  const fallback = String(env.DEEPSEEK_FALLBACK_MODEL || FALLBACK_MODEL).trim() || FALLBACK_MODEL;
   const models = [primary, fallback];
   if (models.includes(requested)) return requested;
   return primary;
 }
 
-async function runModel(env, model, messages, stream) {
-  return env.AI.run(model, {
-    messages,
-    stream,
-    max_tokens: MAX_OUTPUT_TOKENS,
-    temperature: 0.65
-  });
+async function callDeepSeek(env, model, messages, stream) {
+  if (!env.DEEPSEEK_API_KEY) {
+    const error = new Error('DeepSeek API Key 尚未配置');
+    error.code = 'MISSING_API_KEY';
+    throw error;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DEEPSEEK_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': stream ? 'text/event-stream' : 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream,
+        temperature: 0.7,
+        max_tokens: MAX_OUTPUT_TOKENS
+      }),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const error = new Error(`DeepSeek API 请求失败（${response.status}）`);
+      error.status = response.status;
+      throw error;
+    }
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function mapDeepSeekError(error) {
+  if (error?.code === 'MISSING_API_KEY' || error?.status === 401) {
+    return { status: 503, message: 'AI 服务密钥无效或尚未配置，请联系管理员' };
+  }
+  if (error?.status === 402) {
+    return { status: 402, message: 'AI 服务余额不足，请稍后再试或联系管理员' };
+  }
+  if (error?.status === 429) {
+    return { status: 429, message: 'AI 服务请求过于频繁，请稍后再试' };
+  }
+  if (error?.name === 'AbortError') {
+    return { status: 504, message: 'AI 服务响应超时，请稍后重试' };
+  }
+  return { status: 502, message: 'AI 服务暂时不可用，请稍后重试' };
 }
 
 function extractReply(result) {
@@ -177,8 +225,8 @@ export default {
     if (request.method !== 'POST') {
       return jsonResponse({ error: '请求方法不受支持' }, 405, origin, env, { Allow: 'POST, OPTIONS' });
     }
-    if (!env.AI) {
-      return jsonResponse({ error: '免费 AI 服务尚未完成配置' }, 503, origin, env);
+    if (!env.DEEPSEEK_API_KEY) {
+      return jsonResponse({ error: 'AI 服务密钥尚未配置，请联系管理员' }, 503, origin, env);
     }
 
     const declaredLength = Number(request.headers.get('Content-Length') || 0);
@@ -230,15 +278,11 @@ export default {
     let lastError;
     for (const model of models) {
       try {
-        const result = await runModel(env, model, messages, stream);
+        const response = await callDeepSeek(env, model, messages, stream);
+
         if (stream) {
-          const responseStream = result instanceof ReadableStream
-            ? result
-            : result?.body instanceof ReadableStream
-              ? result.body
-              : null;
-          if (!responseStream) throw new Error('Model did not return a stream');
-          return new Response(responseStream, {
+          if (!response.body) throw new Error('DeepSeek 未返回流式响应');
+          return new Response(response.body, {
             status: 200,
             headers: {
               ...corsHeaders(origin, env),
@@ -250,21 +294,18 @@ export default {
           });
         }
 
+        const result = await response.json();
         const reply = extractReply(result);
-        if (!reply) throw new Error('Model returned an empty response');
+        if (!reply) throw new Error('DeepSeek 返回了空内容');
         return jsonResponse({ reply, model }, 200, origin, env);
       } catch (error) {
         lastError = error;
-        console.error(`[workers-ai] model failed: ${model}`, error);
+        console.error(`[deepseek] model failed: ${model}`, error);
+        if ([401, 402, 429].includes(error?.status) || error?.code === 'MISSING_API_KEY' || error?.name === 'AbortError') break;
       }
     }
 
-    return jsonResponse(
-      { error: '免费 AI 服务暂时不可用，请稍后重试' },
-      503,
-      origin,
-      env,
-      lastError ? { 'X-Error-Type': 'model-unavailable' } : {}
-    );
+    const mapped = mapDeepSeekError(lastError);
+    return jsonResponse({ error: mapped.message }, mapped.status, origin, env);
   }
 };

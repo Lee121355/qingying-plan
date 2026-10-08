@@ -2,13 +2,11 @@ name = "fragrant-pond-7503"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
-[ai]
-binding = "AI"
 
 [vars]
 ALLOWED_ORIGINS = "https://lee121355.github.io,http://localhost,http://127.0.0.1"
-DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct"
-FALLBACK_MODEL = "@cf/mistral/mistral-7b-instruct-v0.1"
+DEEPSEEK_MODEL = "deepseek-flash"
+DEEPSEEK_FALLBACK_MODEL = "deepseek-chat"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
