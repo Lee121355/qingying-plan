@@ -12,10 +12,38 @@
   const REQUEST_TIMEOUT = 60000;
   const HISTORY_KEY = 'food.ai.chat.history.v2';
   const MODEL_KEY = 'food.ai.model.v2';
+  const ASSISTANT_COPY = {
+    greetings: {
+      morning: '早上好，我是轻盈计划 AI 助手。今天想先聊聊早餐、训练，还是今天的计划？',
+      noon: '中午好，我是轻盈计划 AI 助手。需要我帮你检查今天的营养摄入或安排午餐吗？',
+      afternoon: '下午好，我是轻盈计划 AI 助手。今天的状态怎么样？可以聊聊饮食、训练或健康计划。',
+      evening: '晚上好，我是轻盈计划 AI 助手。今天想复盘饮食、安排放松，还是制定明天的计划？'
+    },
+    defaultQuestions: [
+      '帮我制定一周减脂饮食计划',
+      '推荐一套 20 分钟家庭训练',
+      '我今天吃了 1500 千卡，还可以吃什么？',
+      '如何提高睡眠质量？'
+    ],
+    proteinQuestion: weight => `我体重 ${weight}kg，每天需要多少蛋白质？`,
+    goalQuestions: {
+      '减脂': '我想减脂，今天晚餐怎么搭配更合适？',
+      '增肌': '我想增肌，今天训练后适合吃什么？',
+      '紧致塑形': '我想紧致塑形，推荐一周家庭训练安排',
+      '维持健康': '帮我安排一份均衡的今日饮食'
+    },
+    timeQuestions: {
+      morning: '早上吃什么更容易保持精力？',
+      noon: '午餐怎么搭配才能更均衡？',
+      afternoon: '下午加餐吃什么更合适？',
+      evening: '晚餐怎么安排更利于恢复和睡眠？'
+    },
+    noHistoryHint: '还没有对话记录，可以从下面的问题开始。'
+  };
   const CDN_LIBS = {
     marked: 'https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js',
     dompurify: 'https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js',
-    highlight: 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js',
+    highlight: 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js',
     highlightTheme: 'https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css'
   };
 
@@ -142,6 +170,60 @@
     };
   }
 
+  function getTimeSlot() {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 11) return 'morning';
+    if (hour >= 11 && hour < 14) return 'noon';
+    if (hour >= 14 && hour < 18) return 'afternoon';
+    return 'evening';
+  }
+
+  function getWelcomeText() {
+    const slot = getTimeSlot();
+    let text = ASSISTANT_COPY.greetings[slot];
+    if (window.FOOD_APP) {
+      const profile = window.FOOD_APP.get('profile') || {};
+      if (profile.name) text = `${profile.name}，` + text;
+    }
+    return text;
+  }
+
+  function getRecommendedQuestions() {
+    const slot = getTimeSlot();
+    const questions = [ASSISTANT_COPY.timeQuestions[slot]];
+    if (window.FOOD_APP) {
+      const profile = window.FOOD_APP.get('profile') || {};
+      const weight = Number(profile.weight);
+      if (weight > 0) questions.push(ASSISTANT_COPY.proteinQuestion(weight));
+      const goalQuestion = ASSISTANT_COPY.goalQuestions[profile.goal];
+      if (goalQuestion) questions.push(goalQuestion);
+      const targets = window.FOOD_APP.targets(profile);
+      if (targets.ready && targets.calories) questions.push(`我的每日热量目标约 ${targets.calories} 千卡，应该怎么分配三餐？`);
+    }
+    return [...new Set([...questions, ...ASSISTANT_COPY.defaultQuestions])].slice(0, 5);
+  }
+
+  function renderRecommendations() {
+    if (!elements.recommendations || !elements.recommendationList) return;
+    const questions = getRecommendedQuestions();
+    elements.recommendationList.innerHTML = '';
+    questions.forEach(question => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = question;
+      button.onclick = () => {
+        elements.input.value = question;
+        sendQuestion();
+      };
+      elements.recommendationList.appendChild(button);
+    });
+    elements.recommendations.hidden = false;
+  }
+
+  function hideRecommendations() {
+    if (elements.recommendations) elements.recommendations.hidden = true;
+  }
+
   function buildMessages(question) {
     const recent = history.slice(-19).map(item => ({
       role: item.role,
@@ -181,6 +263,10 @@
         </div>
         <div class="ai-chat-messages" data-ai-messages aria-live="polite"></div>
         <div class="ai-chat-status" data-ai-live-status>可以开始提问</div>
+        <div class="ai-recommendations" data-ai-recommendations>
+          <div class="ai-recommendations-head">智能推荐问题</div>
+          <div class="ai-recommendation-list" data-ai-recommendation-list></div>
+        </div>
         <form class="ai-chat-compose">
           <textarea data-ai-input maxlength="${MAX_MESSAGE_LENGTH}" rows="2" placeholder="输入你的问题…"></textarea>
           <div class="ai-compose-actions">
@@ -200,6 +286,8 @@
       send: document.querySelector('[data-ai-send]'),
       stop: document.querySelector('[data-ai-stop]'),
       status: document.querySelector('[data-ai-live-status]'),
+      recommendations: document.querySelector('[data-ai-recommendations]'),
+      recommendationList: document.querySelector('[data-ai-recommendation-list]'),
       headerStatus: document.querySelector('.ai-chat-title span'),
       model: document.getElementById('aiModelSelect')
     };
@@ -251,6 +339,10 @@
         </div>
         <div class="ai-chat-messages" data-ai-messages aria-live="polite"></div>
         <div class="ai-chat-status" data-ai-live-status>可以开始提问</div>
+        <div class="ai-recommendations" data-ai-recommendations>
+          <div class="ai-recommendations-head">智能推荐问题</div>
+          <div class="ai-recommendation-list" data-ai-recommendation-list></div>
+        </div>
         <form class="ai-chat-compose">
           <textarea data-ai-input maxlength="${MAX_MESSAGE_LENGTH}" rows="3" placeholder="输入你的问题…"></textarea>
           <div class="ai-compose-actions">
@@ -274,6 +366,8 @@
       send: document.querySelector('[data-ai-send]'),
       stop: document.querySelector('[data-ai-stop]'),
       status: document.querySelector('[data-ai-live-status]'),
+      recommendations: document.querySelector('[data-ai-recommendations]'),
+      recommendationList: document.querySelector('[data-ai-recommendation-list]'),
       headerStatus: document.querySelector('.ai-chat-title span'),
       model: document.getElementById('aiModelSelect')
     };
@@ -356,10 +450,16 @@
 
   function renderConversation() {
     elements.messages.innerHTML = '';
+    elements.recommendations?.removeAttribute('hidden');
     if (!history.length) {
-      elements.messages.insertAdjacentHTML('beforeend', '<div class="ai-welcome">你好，我可以结合你的资料、饮食计划和训练情况回答问题。也可以让我帮你制定轻食方案、估算营养或整理多日计划。</div>');
+      const welcome = document.createElement('div');
+      welcome.className = 'ai-welcome';
+      welcome.textContent = getWelcomeText();
+      elements.messages.appendChild(welcome);
+      renderRecommendations();
       return;
     }
+    hideRecommendations();
     history.forEach((entry, index) => {
       const rendered = addMessageElement(entry);
       if (entry.role === 'assistant' && index === history.length - 1 && entry.model) {
@@ -566,6 +666,7 @@
     history.push(userEntry);
     saveHistory();
     elements.input.value = '';
+    hideRecommendations();
     if (elements.messages.querySelector('.ai-welcome')) elements.messages.innerHTML = '';
     addMessageElement(userEntry);
     scrollToBottom(true);
