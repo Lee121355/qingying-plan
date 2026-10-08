@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qingying-plan-v25';
+const CACHE_NAME = 'qingying-plan-v26';
 const APP_SHELL = [
   './login.html',
   './onboarding.html',
@@ -23,6 +23,14 @@ const APP_SHELL = [
   './app-icon-192.png',
   './app-icon-512.png',
   './avocado-toast-reference.jpg',
+  './recipe-images/oat-milk-egg-breakfast.webp',
+  './recipe-images/egg-whole-wheat-toast-milk.jpg',
+  './recipe-images/tomato-egg-noodles.webp',
+  './recipe-images/tomato-egg-rice.webp',
+  './recipe-images/tomato-tofu-greens.webp',
+  './recipe-images/pepper-pork-rice.jpg',
+  './recipe-images/egg-vegetable-fried-rice.jpg',
+  './recipe-images/seaweed-egg-corn-soup.jpg',
   './app-icon.svg'
 ];
 
