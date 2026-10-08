@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#123c2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="轻盈计划">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="app-icon-180.png">
+  <title>轻盈计划 AI 助手</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="redesign.css">
+  <script>if(localStorage.getItem('food.auth')!=='1')location.replace('login.html')</script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" data-shell></aside>
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">免费云端 AI · 中文助手</p><h1>轻盈计划 AI 助手</h1><p>支持多轮对话、流式回复、Markdown 和代码块。</p></div>
+      </header>
+      <section class="ai-page-shell" data-ai-page aria-label="AI 对话主页"></section>
+    </main>
+  </div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="app.js"></script>
+  <script>initCommon('ai');</script>
+</body>
+</html>

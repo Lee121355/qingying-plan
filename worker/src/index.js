@@ -161,7 +161,7 @@ export default {
   });
 }
     if (!isAllowedOrigin(origin, env)) {
-      return jsonResponse({ error: 'Origin not allowed' }, 403, origin, env);
+      return jsonResponse({ error: '请求来源不受支持' }, 403, origin, env);
     }
 
     if (request.method === 'OPTIONS') {
@@ -169,25 +169,25 @@ export default {
     }
 
     if (pathname !== '/api/chat') {
-      return jsonResponse({ error: 'Not found' }, 404, origin, env);
+      return jsonResponse({ error: '接口不存在' }, 404, origin, env);
     }
     if (request.method !== 'POST') {
-      return jsonResponse({ error: 'Method not allowed' }, 405, origin, env, { Allow: 'POST, OPTIONS' });
+      return jsonResponse({ error: '请求方法不受支持' }, 405, origin, env, { Allow: 'POST, OPTIONS' });
     }
     if (!env.AI) {
-      return jsonResponse({ error: 'Workers AI binding is not configured' }, 503, origin, env);
+      return jsonResponse({ error: '免费 AI 服务尚未完成配置' }, 503, origin, env);
     }
 
     const declaredLength = Number(request.headers.get('Content-Length') || 0);
     if (declaredLength > 100000) {
-      return jsonResponse({ error: 'Request body is too large' }, 413, origin, env);
+      return jsonResponse({ error: '请求内容过大' }, 413, origin, env);
     }
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return jsonResponse({ error: 'Invalid JSON' }, 400, origin, env);
+      return jsonResponse({ error: '请求内容格式不正确' }, 400, origin, env);
     }
 
     let messages;
@@ -219,7 +219,7 @@ export default {
       }
     } catch (error) {
       console.error('[rate-limit] failed', error);
-      return jsonResponse({ error: 'Rate limit service is unavailable' }, 503, origin, env);
+      return jsonResponse({ error: '限流服务暂时不可用，请稍后重试' }, 503, origin, env);
     }
 
     let lastError;

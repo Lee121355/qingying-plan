@@ -69,7 +69,7 @@ const FOOD_AUTH = {
     this.initializeBlank(username);
     const state = this.onboardingState(username);
     this.activate(account);
-    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'index.html' };
+    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'ai.html' };
   },
   guest() {
     this.initializeBlank('guest');
@@ -77,6 +77,6 @@ const FOOD_AUTH = {
     localStorage.setItem('food.currentUser', 'guest');
     localStorage.setItem('food.auth', '1');
     sessionStorage.removeItem('food.reminderShown.guest');
-    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'index.html' };
+    return { ok: true, next: state === '0' ? 'onboarding.html' : state === '1' ? 'profile.html?setup=1' : 'ai.html' };
   }
 };

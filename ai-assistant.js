@@ -3,6 +3,10 @@
 
   const PRIMARY_MODEL = '@cf/meta/llama-3.1-8b-instruct';
   const FALLBACK_MODEL = '@cf/mistral/mistral-7b-instruct-v0.1';
+  const MODEL_LABELS = {
+    [PRIMARY_MODEL]: 'Llama 3.1 8B（默认，响应更快）',
+    [FALLBACK_MODEL]: 'Mistral 7B（备用，自动回退）'
+  };
   const MAX_HISTORY = 20;
   const MAX_MESSAGE_LENGTH = 4000;
   const REQUEST_TIMEOUT = 60000;
@@ -147,6 +151,10 @@
   }
 
   function createUi() {
+    if (document.querySelector('[data-ai-page]')) {
+      createPageUi();
+      return;
+    }
     if (document.querySelector('.ai-fab')) return;
     ensureStylesheet();
     document.body.insertAdjacentHTML('beforeend', `
@@ -157,7 +165,7 @@
         <header class="ai-chat-head">
           <div class="ai-chat-title">
             <strong>轻盈计划 AI</strong>
-            <span data-ai-status>Cloudflare Workers AI · 免费额度</span>
+            <span data-ai-status>免费云端 AI · 中文助手</span>
           </div>
           <div class="ai-chat-actions">
             <button type="button" data-ai-clear title="清空对话" aria-label="清空对话"><i data-lucide="trash-2"></i></button>
@@ -167,14 +175,14 @@
         <div class="ai-chat-toolbar">
           <label for="aiModelSelect">模型</label>
           <select class="ai-model-select" id="aiModelSelect" aria-label="选择 AI 模型">
-            <option value="${PRIMARY_MODEL}">Llama 3.1 8B（默认）</option>
-            <option value="${FALLBACK_MODEL}">Mistral 7B（备用）</option>
+            <option value="${PRIMARY_MODEL}">${MODEL_LABELS[PRIMARY_MODEL]}</option>
+            <option value="${FALLBACK_MODEL}">${MODEL_LABELS[FALLBACK_MODEL]}</option>
           </select>
         </div>
         <div class="ai-chat-messages" data-ai-messages aria-live="polite"></div>
         <div class="ai-chat-status" data-ai-live-status>可以开始提问</div>
         <form class="ai-chat-compose">
-          <textarea data-ai-input maxlength="${MAX_MESSAGE_LENGTH}" rows="2" placeholder="输入消息，Enter 发送，Shift+Enter 换行"></textarea>
+          <textarea data-ai-input maxlength="${MAX_MESSAGE_LENGTH}" rows="2" placeholder="输入你的问题…"></textarea>
           <div class="ai-compose-actions">
             <button class="ai-stop-button" data-ai-stop type="button" title="停止生成" aria-label="停止生成"><i data-lucide="square"></i></button>
             <button class="ai-send-button" data-ai-send type="submit" title="发送" aria-label="发送"><i data-lucide="send"></i></button>
@@ -220,11 +228,84 @@
     renderConversation();
   }
 
+  function createPageUi() {
+    ensureStylesheet();
+    const shell = document.querySelector('[data-ai-page]');
+    shell.innerHTML = `
+      <section class="ai-chat-panel ai-chat-page-panel is-open" aria-label="轻盈计划 AI 助手" aria-hidden="false">
+        <header class="ai-chat-head">
+          <div class="ai-chat-title">
+            <strong>轻盈计划 AI 助手</strong>
+            <span data-ai-status>免费云端 AI · 中文助手</span>
+          </div>
+          <div class="ai-chat-actions">
+            <button type="button" data-ai-clear title="清空对话" aria-label="清空对话"><i data-lucide="trash-2"></i></button>
+          </div>
+        </header>
+        <div class="ai-chat-toolbar">
+          <label for="aiModelSelect">模型</label>
+          <select class="ai-model-select" id="aiModelSelect" aria-label="选择 AI 模型">
+            <option value="${PRIMARY_MODEL}">${MODEL_LABELS[PRIMARY_MODEL]}</option>
+            <option value="${FALLBACK_MODEL}">${MODEL_LABELS[FALLBACK_MODEL]}</option>
+          </select>
+        </div>
+        <div class="ai-chat-messages" data-ai-messages aria-live="polite"></div>
+        <div class="ai-chat-status" data-ai-live-status>可以开始提问</div>
+        <form class="ai-chat-compose">
+          <textarea data-ai-input maxlength="${MAX_MESSAGE_LENGTH}" rows="3" placeholder="输入你的问题…"></textarea>
+          <div class="ai-compose-actions">
+            <button class="ai-stop-button" data-ai-stop type="button" title="停止生成" aria-label="停止生成"><i data-lucide="square"></i></button>
+            <button class="ai-send-button" data-ai-send type="submit" title="发送" aria-label="发送"><i data-lucide="send"></i></button>
+          </div>
+        </form>
+      </section>
+    `;
+    bindUi();
+    renderConversation();
+  }
+
+  function bindUi() {
+    elements = {
+      fab: document.querySelector('.ai-fab'),
+      panel: document.querySelector('.ai-chat-panel'),
+      messages: document.querySelector('[data-ai-messages]'),
+      input: document.querySelector('[data-ai-input]'),
+      form: document.querySelector('.ai-chat-compose'),
+      send: document.querySelector('[data-ai-send]'),
+      stop: document.querySelector('[data-ai-stop]'),
+      status: document.querySelector('[data-ai-live-status]'),
+      headerStatus: document.querySelector('.ai-chat-title span'),
+      model: document.getElementById('aiModelSelect')
+    };
+    const savedModel = storageGet(MODEL_KEY, PRIMARY_MODEL);
+    elements.model.value = [PRIMARY_MODEL, FALLBACK_MODEL].includes(savedModel) ? savedModel : PRIMARY_MODEL;
+    elements.model.onchange = () => storageSet(MODEL_KEY, elements.model.value);
+    if (elements.fab) elements.fab.onclick = () => togglePanel();
+    document.querySelector('[data-ai-close]')?.addEventListener('click', closePanel);
+    document.querySelector('[data-ai-clear]').onclick = clearConversation;
+    elements.stop.onclick = stopGeneration;
+    elements.form.onsubmit = event => {
+      event.preventDefault();
+      sendQuestion();
+    };
+    elements.input.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion();
+      }
+    });
+    document.addEventListener('click', event => {
+      if (event.target.closest('[data-ai-open]')) openPanel();
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+
   function openPanel() {
     if (!elements) return;
     elements.panel.classList.add('is-open');
     elements.panel.setAttribute('aria-hidden', 'false');
-    elements.fab.classList.add('is-open');
+    elements.fab?.classList.add('is-open');
     if (!isLoggedIn()) {
       setStatus('请先登录后再使用 AI 助手', true);
       elements.input.disabled = true;
@@ -238,7 +319,7 @@
     if (!elements) return;
     elements.panel.classList.remove('is-open');
     elements.panel.setAttribute('aria-hidden', 'true');
-    elements.fab.classList.remove('is-open');
+    elements.fab?.classList.remove('is-open');
   }
 
   function togglePanel() {
@@ -291,7 +372,7 @@
   function appendModelLabel(row, model) {
     const label = document.createElement('small');
     label.className = 'ai-model-label';
-    label.textContent = model;
+    label.textContent = MODEL_LABELS[model] || '云端模型';
     label.style.cssText = 'display:block;margin-top:5px;color:#7a8880;font-size:8px;';
     row.style.display = 'block';
     row.appendChild(label);
@@ -476,7 +557,7 @@
       return;
     }
     if (!isWorkerConfigured()) {
-      setStatus('请先在 ai-config.js 中填写已部署的 Cloudflare Worker 地址', true);
+      setStatus('AI 服务尚未连接，请先配置云端服务地址', true);
       return;
     }
 
@@ -495,7 +576,7 @@
     manuallyStopped = false;
     setGenerating(true);
     setStatus('正在生成回答…');
-    elements.headerStatus.textContent = elements.model.value;
+    elements.headerStatus.textContent = MODEL_LABELS[elements.model.value] || '云端模型';
 
     activeController = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -520,7 +601,7 @@
       });
 
       if (!response.ok) {
-        let message = `AI 服务返回 ${response.status}`;
+        let message = `AI 服务暂时不可用（状态码 ${response.status}）`;
         try {
           const payload = await response.json();
           if (payload?.error) message = payload.error;
@@ -572,8 +653,8 @@
       activeController = null;
       setGenerating(false);
       elements.headerStatus.textContent = completed
-        ? '回答完成 · Cloudflare Workers AI'
-        : 'Cloudflare Workers AI · 免费额度';
+        ? '回答完成 · 免费云端 AI'
+        : '免费云端 AI · 中文助手';
       scrollToBottom();
     }
   }
@@ -594,6 +675,7 @@
   }
 
   function init() {
+    if (!elements) history = loadHistory();
     if (initialized) return;
     if (!isLoggedIn()) return;
     initialized = true;
@@ -602,4 +684,3 @@
 
   window.QingyingAssistant = { init, open: openPanel, close: closePanel };
 })();
-

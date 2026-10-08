@@ -531,11 +531,12 @@ function shell(active = 'home') {
     ['home', 'index.html', 'house', '今日概况'],
     ['meal', 'meal-plan.html', 'utensils', '餐饮计划'],
     ['daily', 'daily-plan.html', 'calendar-check', '完整日计划'],
-    ['recipes', 'recipes.html', 'book-open', '食谱库']
+    ['recipes', 'recipes.html', 'book-open', '食谱库'],
+    ['ai', 'ai.html', 'bot', 'AI 助手']
   ];
   const side = document.querySelector('[data-shell]');
   if (!side) return;
-  side.innerHTML = `<a class="brand" href="index.html" title="返回今日概览"><span class="brand-mark">轻</span><span><strong>轻盈计划</strong><small>每日健康管理</small></span></a><nav class="nav" aria-label="主要导航">${items.map(([id, href, icon, label]) => `<a class="${id === active ? 'active' : ''}" href="${href}" title="${label}"${id === active ? ' aria-current="page"' : ''}><i data-lucide="${icon}"></i><span>${label}</span></a>`).join('')}</nav><div class="side-note"><strong>今天也要照顾自己</strong><span>持续记录，让每一次选择都有回应。</span></div>`;
+  side.innerHTML = `<a class="brand" href="ai.html" title="返回 AI 助手"><span class="brand-mark">轻</span><span><strong>轻盈计划</strong><small>每日健康管理</small></span></a><nav class="nav" aria-label="主要导航">${items.map(([id, href, icon, label]) => `<a class="${id === active ? 'active' : ''} nav-${id}" href="${href}" title="${label}"${id === active ? ' aria-current="page"' : ''}><i data-lucide="${icon}"></i><span>${label}</span></a>`).join('')}</nav><div class="side-note"><strong>今天也要照顾自己</strong><span>持续记录，让每一次选择都有回应。</span></div>`;
 }
 
 function initCommon(active = 'home') {

@@ -51,6 +51,19 @@
 }
 
 .ai-chat-panel.is-open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+.ai-chat-page-panel {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  width: 100%;
+  height: min(760px, calc(100dvh - 200px));
+  max-height: none;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  box-shadow: 0 18px 42px rgba(25, 48, 37, .09);
+}
+.ai-chat-page-panel .ai-chat-actions [data-ai-close] { display: none; }
 .ai-chat-head {
   padding: 13px 14px;
   display: flex;
@@ -248,6 +261,14 @@
   }
   .ai-chat-head { padding-top: calc(13px + env(safe-area-inset-top)); }
   .ai-chat-panel .ai-bubble { max-width: 94%; }
+  .ai-chat-page-panel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: max(360px, calc(100dvh - 250px - env(safe-area-inset-bottom)));
+    border: 0;
+    border-radius: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
