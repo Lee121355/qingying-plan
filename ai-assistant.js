@@ -88,6 +88,7 @@ const MODEL_LABELS = {
   let elements = null;
   let history = [];
   let activeController = null;
+  let requestSeq = 0;
   let timedOut = false;
   let manuallyStopped = false;
   let lastUserQuestion = '';
@@ -158,20 +159,27 @@ const MODEL_LABELS = {
     } catch {}
   }
 
+  function visibleHistory(source) {
+    if (!Array.isArray(source)) return [];
+    return source.filter(item => item && ['user', 'assistant'].includes(item.role) && item.content)
+      .slice(-MAX_HISTORY);
+  }
+
   function loadHistory() {
     if (window.FOOD_APP) {
       const appHistory = window.FOOD_APP.get('assistantHistory');
-      if (Array.isArray(appHistory)) return appHistory;
+      if (Array.isArray(appHistory)) return [createSystemMessage(), ...visibleHistory(appHistory)];
     }
     const saved = storageGet(HISTORY_KEY, []);
-    return Array.isArray(saved) ? saved : [];
+    return [createSystemMessage(), ...visibleHistory(saved)];
   }
 
   function saveHistory() {
-    history = history.filter(item => item && ['user', 'assistant'].includes(item.role) && item.content)
-      .slice(-MAX_HISTORY);
-    if (window.FOOD_APP) window.FOOD_APP.set('assistantHistory', history);
-    else storageSet(HISTORY_KEY, history);
+    const visible = visibleHistory(history);
+    const system = history.find(item => item && item.role === 'system' && item.content) || createSystemMessage();
+    history = [system, ...visible];
+    if (window.FOOD_APP) window.FOOD_APP.set('assistantHistory', visible);
+    else storageSet(HISTORY_KEY, visible);
   }
 
   function getApiBase() {
@@ -263,11 +271,12 @@ const MODEL_LABELS = {
   }
 
   function buildMessages(question) {
-    const recent = history.slice(-19).map(item => ({
+    const recent = visibleHistory(history).slice(-(MAX_HISTORY - 2)).map(item => ({
       role: item.role,
       content: String(item.content || '').slice(0, MAX_MESSAGE_LENGTH)
     }));
-    return [createSystemMessage(), ...recent, { role: 'user', content: question }].slice(-MAX_HISTORY);
+    const system = history.find(item => item && item.role === 'system' && item.content) || createSystemMessage();
+    return [system, ...recent, { role: 'user', content: question }];
   }
 
   function createUi() {
@@ -489,7 +498,8 @@ const MODEL_LABELS = {
   function renderConversation() {
     elements.messages.innerHTML = '';
     elements.recommendations?.removeAttribute('hidden');
-    if (!history.length) {
+    const visible = visibleHistory(history);
+    if (!visible.length) {
       const welcome = document.createElement('div');
       welcome.className = 'ai-welcome';
       welcome.textContent = getWelcomeText();
@@ -498,11 +508,11 @@ const MODEL_LABELS = {
       return;
     }
     hideRecommendations();
-    history.forEach((entry, index) => {
+    visible.forEach((entry, index) => {
       if (entry.role === 'user') lastUserQuestion = entry.content;
       const rendered = addMessageElement(entry);
       if (entry.role === 'assistant') { appendSuggestions(rendered.row, extractSuggestions(entry.content)); appendMealPlanButton(rendered.row, entry.content); }
-      if (entry.role === 'assistant' && index === history.length - 1 && entry.model) {
+      if (entry.role === 'assistant' && index === visible.length - 1 && entry.model) {
         appendModelLabel(rendered.row, entry.model);
       }
     });
@@ -979,6 +989,7 @@ const MODEL_LABELS = {
 
     const userEntry = { role: 'user', content: question };
     const requestHistory = buildMessages(question);
+    const requestId = ++requestSeq;
     history.push(userEntry);
     saveHistory();
     elements.input.value = '';
@@ -1043,6 +1054,7 @@ const MODEL_LABELS = {
 
       assistantText = assistantText.trim();
       if (assistantText) {
+        if (requestId !== requestSeq) return;
         renderMarkdown(assistantRow.bubble, stripSuggestionBlock(assistantText));
         appendSuggestions(assistantRow.row, extractSuggestions(assistantText));
         appendMealPlanButton(assistantRow.row, assistantText);
@@ -1052,9 +1064,10 @@ const MODEL_LABELS = {
         setStatus('回答完成');
       } else {
         assistantRow.row.remove();
-        setStatus('模型没有返回内容，请重试', true);
+        setStatus('请求失败，请稍后再试', true);
       }
     } catch (error) {
+      if (requestId !== requestSeq) return;
       const stopped = error?.name === 'AbortError' && manuallyStopped;
       if (assistantText.trim()) {
         renderMarkdown(assistantRow.bubble, assistantText);
@@ -1065,9 +1078,10 @@ const MODEL_LABELS = {
       }
       if (stopped) setStatus('已停止生成');
       else if (timedOut) setStatus('请求超时，请检查网络或稍后重试', true);
-      else setStatus(error?.message || 'AI 请求失败，请稍后重试', true);
+      else setStatus(error?.message || '请求失败，请稍后再试', true);
     } finally {
       clearTimeout(timeoutId);
+      if (requestId !== requestSeq) return;
       activeController = null;
       setGenerating(false);
       elements.headerStatus.textContent = completed
@@ -1084,12 +1098,24 @@ const MODEL_LABELS = {
   }
 
   function clearConversation() {
-    if (!history.length) return;
+    if (!visibleHistory(history).length) return;
     if (!window.confirm('确定清空全部 AI 对话记录吗？')) return;
-    history = [];
+    requestSeq += 1;
+    if (activeController) {
+      manuallyStopped = true;
+      activeController.abort();
+      activeController = null;
+    }
+    timedOut = false;
+    manuallyStopped = false;
+    setGenerating(false);
+    // 只清除对话消息，保留 system 提示；缺失时重新构造一条。
+    history = history.filter(item => item && item.role === 'system' && item.content);
+    if (!history.length) history = [createSystemMessage()];
     saveHistory();
     renderConversation();
-    setStatus('对话已清空');
+    setStatus('对话已清空，请重新开始提问');
+    if (elements.headerStatus) elements.headerStatus.textContent = '免费云端 AI · 中文助手';
   }
 
   function init() {
