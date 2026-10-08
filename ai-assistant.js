@@ -12,6 +12,43 @@
   const REQUEST_TIMEOUT = 60000;
   const HISTORY_KEY = 'food.ai.chat.history.v2';
   const MODEL_KEY = 'food.ai.model.v2';
+  const FOOD_KEYWORDS = [
+    ['鸡蛋', ['鸡蛋', '水煮蛋', '煎蛋', '炒蛋', '蛋花', '鸡蛋羹']],
+    ['牛奶', ['牛奶']],
+    ['酸奶', ['酸奶']],
+    ['燕麦', ['燕麦片', '燕麦']],
+    ['鸡胸肉', ['鸡胸肉', '鸡胸']],
+    ['鸡肉', ['鸡腿肉', '鸡肉']],
+    ['牛肉', ['牛肉']],
+    ['猪肉', ['猪肉']],
+    ['鱼', ['三文鱼', '鳕鱼', '鲈鱼', '鱼肉', '鱼']],
+    ['虾', ['虾仁', '虾']],
+    ['米饭', ['米饭']],
+    ['糙米', ['糙米']],
+    ['面条', ['荞麦面', '面条']],
+    ['玉米', ['玉米']],
+    ['红薯', ['红薯']],
+    ['土豆', ['土豆']],
+    ['苹果', ['苹果']],
+    ['香蕉', ['香蕉']],
+    ['蓝莓', ['蓝莓']],
+    ['草莓', ['草莓']],
+    ['橙子', ['橙子']],
+    ['猕猴桃', ['猕猴桃']],
+    ['牛油果', ['牛油果']],
+    ['西兰花', ['西兰花']],
+    ['菠菜', ['菠菜']],
+    ['生菜', ['生菜']],
+    ['黄瓜', ['黄瓜']],
+    ['番茄', ['西红柿', '番茄']],
+    ['胡萝卜', ['胡萝卜']],
+    ['菌菇', ['蘑菇', '菌菇']],
+    ['豆腐', ['豆腐']],
+    ['豆浆', ['豆浆']],
+    ['全麦面包', ['全麦面包', '全麦吐司']],
+    ['坚果', ['坚果', '核桃', '杏仁']],
+  ];
+  const FOOD_ALIASES = FOOD_KEYWORDS.flatMap(([name, aliases]) => aliases.map(alias => ({ name, alias }))).sort((a, b) => b.alias.length - a.alias.length);
   const ASSISTANT_COPY = {
     greetings: {
       morning: '早上好，我是轻盈计划 AI 助手。今天想先聊聊早餐、训练，还是今天的计划？',
@@ -703,16 +740,22 @@
     row.appendChild(list);
   }
 
+  function hasFoodKeyword(text) {
+    const source = String(text || '');
+    return FOOD_KEYWORDS.some(([, aliases]) => aliases.some(alias => source.includes(alias)));
+  }
+
   function detectMealRecommendation(markdown) {
-    const source = stripSuggestionBlock(String(markdown || ''));
-    const keywords = /早餐|午餐|晚餐|加餐|食谱|热量|千卡|卡路里|推荐|克|g\b/i;
-    const listItems = source.split(/\r?\n/).filter(line => /^\s*(?:[-*+]|\d+[.、])\s+/.test(line));
-    const quantity = /(?:约\s*)?\d+(?:\.\d+)?\s*(?:kcal|千卡|大卡|卡路里|克|g)\b/i.test(source);
-    return keywords.test(source) || listItems.length > 0 || quantity;
+    return hasFoodKeyword(stripSuggestionBlock(String(markdown || '')));
   }
 
   function mealKeyFromLabel(label) {
-    return ({ '早餐': 'breakfast', '午餐': 'lunch', '晚餐': 'dinner', '加餐': 'snack' })[label] || 'snack';
+    return ({ '早餐': 'breakfast', '午餐': 'lunch', '晚餐': 'dinner', '额外': 'snack', '加餐': 'snack' })[label] || 'snack';
+  }
+
+  function formatMealPlanDate(date) {
+    const match = String(date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${Number(match[2])} 月 ${Number(match[3])} 日` : date;
   }
 
   function stripMarkdownLine(line) {
@@ -733,26 +776,23 @@
     const ignored = /注意|建议|提示|说明|小贴士|步骤|做法|总结|营养|原理|目标|热量|搭配|替换|原则|免责|医生|分量|教程/;
     const foods = [];
     const seen = new Set();
-    const addFood = (name, calories) => {
+    const addFood = (name, calories, note = '来自 AI 推荐') => {
       const clean = String(name || '').replace(/[：:；;，,。.!！？?]+$/g, '').trim().slice(0, 40);
       if (!clean || ignored.test(clean) || seen.has(clean)) return;
       seen.add(clean);
-      foods.push({ name: clean, calories, note: '来自 AI 推荐' });
+      foods.push({ name: clean, calories, note });
     };
     source.split(/\r?\n/).forEach(line => {
-      const trimmed = line.trim();
-      if (!/^\s*(?:[-*+]|\d+[.、])\s+/.test(trimmed)) return;
-      const content = stripMarkdownLine(trimmed);
+      const content = stripMarkdownLine(line);
       if (!content || ignored.test(content)) return;
+      const matches = FOOD_ALIASES.filter(item => content.includes(item.alias));
+      if (!matches.length) return;
       const calories = extractCalories(content);
-      const parts = content.split(/[｜|：:，,；;]/).map(part => part.trim()).filter(Boolean);
-      const name = parts[0].replace(/\s*(?:约\s*)?\d+(?:\.\d+)?\s*(?:kcal|千卡|大卡|卡路里|克|g)\b.*$/i, '').trim();
-      addFood(name || parts[0], calories);
+      matches.forEach(item => addFood(item.name, calories));
     });
-    if (!foods.length) {
+    if (!foods.length && hasFoodKeyword(source)) {
       const summary = source.split(/\r?\n/).map(line => stripMarkdownLine(line)).filter(Boolean).join(' ').slice(0, 40);
-      addFood('AI 餐饮推荐', extractCalories(source));
-      if (summary) foods[0].note = `来自 AI 推荐：${summary}`;
+      addFood('AI 餐饮推荐', extractCalories(source), summary ? `来自 AI 推荐：${summary}` : '来自 AI 推荐');
     }
     return foods.slice(0, 8);
   }
@@ -774,27 +814,38 @@
     const today = window.FOOD_APP.dateKey();
     const tomorrowDate = new Date(`${today}T00:00:00`);
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = window.FOOD_APP.dateKey(tomorrowDate);
+    const foodOptions = items.map((item, index) => `
+      <label class="ai-meal-food-option">
+        <input type="checkbox" data-ai-meal-food value="${index}" checked>
+        <span>${escapeHtml(item.name)}${item.calories ? ` · ${item.calories} kcal` : ''}</span>
+      </label>
+    `).join('');
     document.body.insertAdjacentHTML('beforeend', `
       <div class="ai-meal-dialog-backdrop" data-ai-meal-dialog>
         <section class="ai-meal-dialog" role="dialog" aria-modal="true" aria-label="添加到餐饮计划">
           <header><strong>添加到餐饮计划</strong><button type="button" data-ai-meal-close title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></header>
-          <p>将 ${items.length} 项 AI 推荐保存到餐饮打卡：${escapeHtml(items.map(item => item.name).join('、'))}</p>
+          <p>勾选要添加的食品，保存后可在餐饮计划页面查看。</p>
+          <fieldset class="ai-meal-food-list">
+            <legend>选择食品</legend>
+            ${foodOptions}
+          </fieldset>
           <label>日期
             <select data-ai-meal-date>
-              <option value="${today}">今天（${today}）</option>
-              <option value="${window.FOOD_APP.dateKey(tomorrowDate)}">明天（${window.FOOD_APP.dateKey(tomorrowDate)}）</option>
-              <option value="custom">自定义日期</option>
+              <option value="today">今天（${today}）</option>
+              <option value="tomorrow">明天（${tomorrow}）</option>
+              <option value="custom">自定义</option>
             </select>
           </label>
           <label data-ai-custom-date-wrap hidden>自定义日期
             <input type="date" data-ai-meal-custom-date value="${today}">
           </label>
-          <label>餐次
+          <label>时段
             <select data-ai-meal-type>
               <option value="早餐">早餐</option>
               <option value="午餐">午餐</option>
               <option value="晚餐">晚餐</option>
-              <option value="加餐">加餐</option>
+              <option value="额外">额外</option>
             </select>
           </label>
           <div class="ai-meal-dialog-actions">
@@ -813,27 +864,20 @@
     dialog.querySelectorAll('[data-ai-meal-close]').forEach(close => close.onclick = closeMealPlanDialog);
     dialog.addEventListener('click', event => { if (event.target === dialog) closeMealPlanDialog(); });
     dialog.querySelector('[data-ai-meal-confirm]').onclick = () => {
-      const date = dateSelect.value === 'custom' ? customDate.value : dateSelect.value;
+      const date = dateSelect.value === 'today' ? today : dateSelect.value === 'tomorrow' ? tomorrow : customDate.value;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { window.FOOD_APP.toast('请选择有效日期'); return; }
+      const selected = [...dialog.querySelectorAll('[data-ai-meal-food]:checked')].map(input => items[Number(input.value)]).filter(Boolean);
+      if (!selected.length) { window.FOOD_APP.toast('请至少勾选一种食品'); return; }
       const mealLabel = mealSelect.value;
-      const saved = window.FOOD_APP.get('aiMeals') || {};
-      const day = saved[date] || { breakfast: [], lunch: [], dinner: [], snack: [] };
-      const key = mealKeyFromLabel(mealLabel);
-      day[key] = Array.isArray(day[key]) ? day[key] : [];
-      let added = 0;
-      items.forEach(item => {
-        if (day[key].some(entry => entry.name === item.name)) return;
-        day[key].push(item);
-        added += 1;
-      });
-      saved[date] = day;
-      window.FOOD_APP.set('aiMeals', saved);
-      window.FOOD_APP.toast(`已添加到 ${date} ${mealLabel}`);
-      appendMealPlanSystemMessage(`已添加到 ${date} ${mealLabel} ✅`);
+      const mealKey = mealKeyFromLabel(mealLabel);
+      const added = window.FOOD_APP.addMealPlanItems(date, mealKey, selected);
+      const dateLabel = formatMealPlanDate(date);
+      window.FOOD_APP.toast(`已添加到 ${dateLabel} ${mealLabel}`);
+      appendMealPlanSystemMessage(`已添加到 ${dateLabel} ${mealLabel} ✅`);
       button.disabled = true;
-      button.textContent = '已添加到餐饮计划';
+      button.textContent = '已添加';
       closeMealPlanDialog();
-      if (!added) window.FOOD_APP.toast('该餐次已存在相同推荐');
+      if (!added.length) window.FOOD_APP.toast(`该时段已存在相同食品`);
     };
     if (window.lucide) window.lucide.createIcons();
   }

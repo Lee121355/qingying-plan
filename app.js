@@ -20,6 +20,9 @@ if (localStorage.getItem('food.auth') === '1' && !location.pathname.endsWith('/o
   if (onboardingState === '1' && !onProfilePage) location.replace('profile.html?setup=1');
 }
 
+const MEAL_PLAN_STORAGE_KEY = 'qingying-plan-meals';
+const MEAL_PLAN_SLOT_KEYS = ['breakfast', 'lunch', 'dinner', 'snack'];
+
 const FOOD_APP = {
   defaults: {
     profile: { name: '', gender: '', age: '', height: '', weight: '', bodyFat: '', goal: '', activity: '' },
@@ -119,6 +122,59 @@ const FOOD_APP = {
       day.setDate(start.getDate() + index);
       return this.dateKey(day);
     });
+  },
+  normalizeMealPlan(value) {
+    const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    return Object.entries(source).reduce((plan, [date, day]) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !day || typeof day !== 'object' || Array.isArray(day)) return plan;
+      plan[date] = MEAL_PLAN_SLOT_KEYS.reduce((slots, key) => {
+        slots[key] = Array.isArray(day[key]) ? day[key] : [];
+        return slots;
+      }, {});
+      return plan;
+    }, {});
+  },
+  getMealPlan() {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(MEAL_PLAN_STORAGE_KEY) || 'null'); } catch {}
+    if (!saved || typeof saved !== 'object' || Array.isArray(saved)) {
+      let legacy = {};
+      try { legacy = this.get('aiMeals') || {}; } catch {}
+      if (legacy && typeof legacy === 'object' && !Array.isArray(legacy) && Object.keys(legacy).length) {
+        saved = legacy;
+        this.saveMealPlan(saved);
+      }
+    }
+    return this.normalizeMealPlan(saved);
+  },
+  saveMealPlan(value) {
+    const plan = this.normalizeMealPlan(value);
+    localStorage.setItem(MEAL_PLAN_STORAGE_KEY, JSON.stringify(plan));
+    window.dispatchEvent(new CustomEvent('food:meal-plan-updated', { detail: { plan } }));
+    return plan;
+  },
+  addMealPlanItems(date, slot, items = []) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) throw new Error('无效日期');
+    const key = MEAL_PLAN_SLOT_KEYS.includes(slot) ? slot : 'snack';
+    const plan = this.getMealPlan();
+    const day = plan[date] || MEAL_PLAN_SLOT_KEYS.reduce((slots, item) => ({ ...slots, [item]: [] }), {});
+    const target = Array.isArray(day[key]) ? day[key] : [];
+    const added = [];
+    items.forEach(item => {
+      const name = String(item?.name || '').trim().slice(0, 40);
+      if (!name || target.some(entry => String(entry?.name || '').trim() === name)) return;
+      const normalized = {
+        name,
+        calories: Math.max(0, Math.round(Number(item?.calories) || 0)),
+        note: String(item?.note || '来自 AI 推荐').trim().slice(0, 120) || '来自 AI 推荐'
+      };
+      target.push(normalized);
+      added.push(normalized);
+    });
+    day[key] = target;
+    plan[date] = day;
+    this.saveMealPlan(plan);
+    return added;
   },
   userId() {
     let id = localStorage.getItem('food.currentUser');
@@ -587,6 +643,7 @@ function showDailyReminder() {
     modal.classList.add('open');
   }, 450);
 }
+window.FOOD_APP = FOOD_APP;
 function loadAssistant() {
   if (window.QingyingAssistant) { window.QingyingAssistant.init(); return; }
   if (document.querySelector('script[data-qy-ai-loader]')) return;

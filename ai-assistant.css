@@ -274,6 +274,18 @@
 .ai-meal-dialog label { display: grid; gap: 6px; margin-top: 12px; color: #405047; font-size: 11px; font-weight: 700; }
 .ai-meal-dialog select, .ai-meal-dialog input { width: 100%; height: 42px; padding: 0 10px; border: 1px solid var(--ai-line); border-radius: 6px; background: #fff; font-size: 12px; }
 .ai-meal-dialog-actions { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ai-meal-food-list {
+  margin: 12px 0 0;
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--ai-line);
+  border-radius: 6px;
+}
+.ai-meal-food-list legend { padding: 0 4px; color: #405047; font-size: 11px; font-weight: 700; }
+.ai-meal-dialog .ai-meal-food-option { display: flex; align-items: center; gap: 8px; min-height: 32px; margin-top: 0; color: var(--ai-ink); font-size: 11px; }
+.ai-meal-dialog .ai-meal-food-option input { width: 16px; height: 16px; padding: 0; margin: 0; accent-color: var(--ai-green); }
+.ai-meal-food-option span { min-width: 0; overflow-wrap: anywhere; }
 .ai-meal-dialog-actions button { min-height: 42px; border-radius: 6px; font-size: 12px; font-weight: 700; }
 .ai-meal-cancel { border: 1px solid var(--ai-line); color: var(--ai-ink); background: #fff; }
 .ai-meal-confirm { border: 0; color: #fff; background: var(--ai-green); }
