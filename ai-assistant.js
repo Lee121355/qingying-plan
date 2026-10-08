@@ -1,12 +1,12 @@
 (() => {
   'use strict';
 
-  const PRIMARY_MODEL = '@cf/meta/llama-3.1-8b-instruct';
-  const FALLBACK_MODEL = '@cf/mistral/mistral-7b-instruct-v0.1';
-  const MODEL_LABELS = {
-    [PRIMARY_MODEL]: 'Llama 3.1 8B（默认，响应更快）',
-    [FALLBACK_MODEL]: 'Mistral 7B（备用，自动回退）'
-  };
+const PRIMARY_MODEL = 'deepseek-flash';
+const FALLBACK_MODEL = 'deepseek-chat';
+const MODEL_LABELS = {
+  [PRIMARY_MODEL]: 'DeepSeek Flash（默认，响应更快）',
+  [FALLBACK_MODEL]: 'DeepSeek Chat（备用）',
+};
   const MAX_HISTORY = 20;
   const MAX_MESSAGE_LENGTH = 4000;
   const REQUEST_TIMEOUT = 60000;
