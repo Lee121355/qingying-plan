@@ -15,14 +15,17 @@ const KV_MINUTE_TTL = 60;
 const KV_DAY_TTL = 86400;
 const MEMORY_LIMIT_STORE = new Map();
 
-const SYSTEM_PROMPT = [
-  '你是“轻盈计划”的 AI 助手，帮助用户管理饮食、营养、饮水和运动计划。',
-  '请准确理解上下文，支持多轮对话；信息不足时只追问一个最关键的问题。',
-  '推荐饮食时遵循低油、控糖、少盐、高纤维、优质蛋白搭配复合碳水的原则。',
-  '使用清晰的 Markdown 回复；代码必须放在带语言标识的代码块中。',
-  '不要编造用户数据、诊断疾病或承诺医疗效果。涉及疾病、孕期、用药或进食障碍时，提示咨询医生或注册营养师。',
-  '如果用户的问题与健康管理无关，也可以正常、简洁地帮助回答。'
-].join('\n');
+const SYSTEM_PROMPT = `
+你是“轻盈计划”的健康管理 AI 助手。
+你的职责是帮助用户制定饮食、训练、睡眠和健康计划。
+
+必须遵守：
+1. 无论用户用什么语言提问，你都必须使用简体中文回答。
+2. 回答要简洁、友好、实用，避免冗长废话。
+3. 涉及饮食和训练建议时，尽量给出具体数字、步骤和注意事项。
+4. 涉及健康风险时，提醒用户咨询专业医生。
+5. 不要输出英文段落，专有名词（如 BMI、HIIT）可保留英文，但正文必须是中文。
+`;
 
 function getAllowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -197,9 +200,11 @@ export default {
       return jsonResponse({ error: error.message }, 400, origin, env);
     }
 
-    if (!messages.some(message => message.role === 'system')) {
-      messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages].slice(-MAX_MESSAGES);
-    }
+    const conversationMessages = messages.filter(message => message.role !== 'system');
+    messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...conversationMessages.slice(-(MAX_MESSAGES - 1))
+    ];
 
     const stream = body.stream !== false;
     const preferredModel = selectModel(body.model, env);
