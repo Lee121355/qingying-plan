@@ -74,7 +74,15 @@
     .exercise-item span { display:block;color:var(--muted);font-size:8px;margin-top:2px; }
     .check { width:22px;height:22px;border:1px solid var(--line);border-radius:50%;background:#fff;color:transparent;display:grid;place-items:center;padding:0; }
     .check.done { color:#fff;border-color:var(--green);background:var(--green); }
-    .top-actions { display:flex; align-items:center; gap:10px; }
+    .top-actions { display:flex; flex-direction:column; align-items:flex-end; gap:9px; }
+    .account-entry { display:flex; align-items:center; gap:10px; padding:4px 6px 4px 12px; border-radius:999px; text-decoration:none; transition:background .2s ease; }
+    .account-entry:hover { background:#eef4ef; }
+    .account-entry-copy { text-align:right; }
+    .account-entry-copy strong, .account-entry-copy span { display:block; }
+    .account-entry-copy strong { font-size:12px; }
+    .account-entry-copy span { margin-top:2px; color:var(--muted); font-size:10px; }
+    .account-entry .avatar { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; color:#713a2b; background:var(--orange-soft); border:1px solid #dfc4b8; font-size:14px; font-weight:700; box-shadow:0 6px 16px rgba(35,65,48,.08); }
+    @media(max-width:720px){ .account-entry { padding:0; } .account-entry-copy { display:none; } }
     .checkin-btn.done { color:var(--green); border-color:#b8d2c0; background:#edf5ef; }
     .checkin-celebration { text-align:center; padding:4px 0 12px; }
     .checkin-mark { width:68px;height:68px;margin:0 auto 13px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--green);box-shadow:0 12px 28px rgba(53,108,80,.22); }
@@ -94,7 +102,7 @@
     .history-focus-grid span { display:block;color:var(--muted);font-size:8px; }
     .history-focus-grid b { display:block;margin-top:5px;font-size:12px; }
     @media(max-width:1050px){.dashboard-grid{grid-template-columns:1fr}.chart-wrap{height:235px}}
-    @media(max-width:720px){.chart-card{padding:15px 12px}.chart-head{flex-direction:column}.chart-tools{width:100%;align-items:stretch}.period-tabs{align-self:flex-end}.history-select{align-self:flex-end}.chart-wrap{height:220px}.chart-summary{grid-template-columns:repeat(2,1fr)}.history-grid{grid-template-columns:repeat(2,1fr)}.hero{padding:17px}.quick-stats{gap:7px}.mini-stat{padding:12px}.mini-stat b{font-size:16px}.top-actions{width:100%;justify-content:space-between}.profile-mini{margin-left:auto}.history-focus-grid{grid-template-columns:1fr}}
+    @media(max-width:720px){.chart-card{padding:15px 12px}.chart-head{flex-direction:column}.chart-tools{width:100%;align-items:stretch}.period-tabs{align-self:flex-end}.history-select{align-self:flex-end}.chart-wrap{height:220px}.chart-summary{grid-template-columns:repeat(2,1fr)}.history-grid{grid-template-columns:repeat(2,1fr)}.hero{padding:17px}.quick-stats{gap:7px}.mini-stat{padding:12px}.mini-stat b{font-size:16px}.top-actions{width:100%;flex-direction:row-reverse;align-items:center;justify-content:space-between}.history-focus-grid{grid-template-columns:1fr}}
   </style>
   <link rel="stylesheet" href="redesign.css">
 </head>
@@ -104,7 +112,7 @@
   <main class="main">
     <header class="topbar">
       <div><p class="eyebrow">今天</p><h1><span id="timeGreeting">早上好</span>，<span data-user-name>用户</span></h1><p>从今天的第一条健康记录开始</p></div>
-      <div class="top-actions"><button class="btn btn-outline checkin-btn" id="checkinButton"><i data-lucide="calendar-check"></i><span>今日签到</span></button></div>
+      <div class="top-actions"><a class="account-entry" href="account.html" title="个人信息与账号" aria-label="个人信息与账号"><span class="account-entry-copy"><strong data-user-name>用户</strong><span>个人信息与账号</span></span><span class="avatar" data-user-avatar>用</span></a><button class="btn btn-outline checkin-btn" id="checkinButton"><i data-lucide="calendar-check"></i><span>今日签到</span></button></div>
     </header>
     <section class="card chart-card" aria-label="累计营养摄入动态图">
       <div class="chart-head"><div><h2 id="chartTitle">本周累计营养摄入</h2><p id="chartSubtitle">按日累加摄入量，回顾本周营养达标情况</p><div class="chart-legend" style="margin-top:9px"><span><i class="legend-bar"></i>累计摄入</span><span><i class="legend-line"></i>累计目标</span></div></div><div class="chart-tools"><div class="period-tabs" aria-label="累计周期"><button class="active" data-period="week">周</button><button data-period="month">月</button><button data-period="year">年</button></div><select class="history-select" id="historySelect" aria-label="历史记录"></select></div></div>
